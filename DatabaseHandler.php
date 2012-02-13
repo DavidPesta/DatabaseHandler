@@ -164,6 +164,8 @@ class DatabaseHandler extends PDO
 				else $remainingArgs[] = $args[ $i ];
 			}
 		}
+		
+		if( count( $remainingArgs ) == 1 && array_key_exists( 0, $remainingArgs ) && $remainingArgs[ 0 ] == null ) $remainingArgs = array();
 	}
 	
 	public function execute()
@@ -315,6 +317,8 @@ class DatabaseHandler extends PDO
 	{
 		self::prepareArgs( func_get_args(), $table, $records );
 		
+		if( empty( $records ) ) return;
+		
 		// Check if it is multidimensional array; if not, then make it multidimensional
 		if( ! self::isMultiArray( $records ) ) {
 			$singleRecord = true;
@@ -398,6 +402,8 @@ class DatabaseHandler extends PDO
 	public function update()
 	{
 		self::prepareArgs( func_get_args(), $table, $records );
+		
+		if( empty( $records ) ) return;
 		
 		// Check if it is multidimensional array; if not, then make it multidimensional
 		if( ! self::isMultiArray( $records ) ) $records = array( $records );
