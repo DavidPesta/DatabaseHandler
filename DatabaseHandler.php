@@ -299,12 +299,24 @@ class DatabaseHandler extends PDO
 		return $value;
 	}
 	
+	public static function isMultiArray( $array )
+	{
+		// The following detects if an array exists as one of $array's elements:
+		// if( count( $records ) == count( $records, COUNT_RECURSIVE ) ) {
+		// Instead, we want a negative response if there exists a single non-array value inside $array
+		foreach( $array as $value ) {
+			if( is_null( $value ) ) continue;
+			if( ! is_array( $value ) ) return false;
+		}
+		return true;
+	}
+	
 	public function insert()
 	{
 		self::prepareArgs( func_get_args(), $table, $records );
 		
 		// Check if it is multidimensional array; if not, then make it multidimensional
-		if( count( $records ) == count( $records, COUNT_RECURSIVE ) ) {
+		if( ! self::isMultiArray( $records ) ) {
 			$singleRecord = true;
 			$records = array( $records );
 		}
@@ -388,7 +400,7 @@ class DatabaseHandler extends PDO
 		self::prepareArgs( func_get_args(), $table, $records );
 		
 		// Check if it is multidimensional array; if not, then make it multidimensional
-		if( count( $records ) == count( $records, COUNT_RECURSIVE ) ) $records = array( $records );
+		if( ! self::isMultiArray( $records ) ) $records = array( $records );
 		
 		foreach( $records as $record ) {
 			$params = array();
@@ -435,7 +447,7 @@ class DatabaseHandler extends PDO
 			if( empty( $data ) ) return;
 			
 			// Check if it is multidimensional array; if not, then make it multidimensional
-			if( count( $data ) == count( $data, COUNT_RECURSIVE ) ) $data = array( $data );
+			if( ! self::isMultiArray( $data ) ) $data = array( $data );
 			
 			foreach( $data as $record ) {
 				$params = array();
