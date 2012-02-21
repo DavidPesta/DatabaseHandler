@@ -216,9 +216,9 @@ class DatabaseHandler extends PDO
 		
 		$args = func_get_args();
 		
-		$arrays = $args[ 0 ] == null ? array() : $args[ 0 ];
-		$keyFields = $args[ 1 ];
-		$valueFields = $args[ 2 ];
+		$keyFields = $args[ 0 ];
+		$valueFields = $args[ 1 ];
+		$arrays = $args[ 2 ] == null ? array() : $args[ 2 ];
 		
 		foreach( $arrays as $array ) {
 			$newResultsRef =& $newResults;
@@ -289,7 +289,7 @@ class DatabaseHandler extends PDO
 			$arrays[] = $result;
 		}
 		
-		return self::groupByKeyValues( $arrays, $keyFields, $valueFields );
+		return self::groupByKeyValues( $keyFields, $valueFields, $arrays );
 	}
 	
 	public static function formatValueForDatabase( $fieldSchema, $value )
