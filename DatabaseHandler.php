@@ -186,7 +186,7 @@ class DatabaseHandler extends PDO
 		return $stmt->fetch( PDO::FETCH_ASSOC );
 	}
 	
-	public function fetchAll()
+	public function fetch()
 	{
 		self::prepareArgs( func_get_args(), $sql, $params );
 		
