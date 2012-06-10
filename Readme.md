@@ -1,6 +1,10 @@
-## February 8, 2012
+DatabaseHandler
+===============
 
-DatabaseHandler is a powerful and important piece of original work. It is the culmination of many hundreds of hours of thought and experimentation after attempting many different kinds of database handling implementations. It is extremely vital that neither I nor anybody else loses their ability to use this DatabaseHandler library from any of the wild and crazy situations that can happen in this totally bizzare and chaotic world (from strange legal nonsense, etc). Therefore, I have made DatabaseHandler open source under the MIT license for anyone and everyone to use for any and every reason. DatabaseHandler is essentially public domain now, owned by everybody and yet owned by nobody. So, everybody can enjoy DatabaseHandler and use it and copy it and modify it and sell it in any or all of their projects; for themselves, for their friends, for their clients, by their friends, by their clients, anybody and everybody for any or all reasons.
+A powerful library class that makes it easy to handle MySQL data.
+
+<b>Initial Release:</b> February 8, 2012<br>
+<b>Last Updated:</b> June 10, 2012
 
 
 ## Documentation
@@ -55,7 +59,7 @@ The examples folder provides an exceptional set of self-explanatory documentatio
 
 ## License 
 
-(The MIT License)
+The MIT License
 
 Copyright (c) 2012 David Pesta
 
