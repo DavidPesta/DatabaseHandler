@@ -39,7 +39,8 @@ class DatabaseHandler extends PDO
 			'port'     => '3306',
 			'database' => '',
 			'user'     => 'root',
-			'pass'     => ''
+			'pass'     => '',
+			'opt'      => array()
 		);
 		
 		$this->_cache    = $settings[ 'cache' ];
@@ -49,8 +50,6 @@ class DatabaseHandler extends PDO
 		$this->_user     = $settings[ 'user' ];
 		$this->_pass     = $settings[ 'pass' ];
 		$this->_opt      = $settings[ 'opt' ];
-		
-		if( $settings[ 'opt' ] == null ) $settings[ 'opt' ] = array();
 		
 		$this->connectToDatabase();
 		$this->loadTableSchemata();
