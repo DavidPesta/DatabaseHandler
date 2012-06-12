@@ -9,6 +9,7 @@
 
 class DatabaseHandler extends PDO
 {
+	protected $_cache;
 	protected $_host;
 	protected $_port;
 	protected $_database;
@@ -33,6 +34,7 @@ class DatabaseHandler extends PDO
 		}
 		
 		$settings += array(
+			'cache'    => false,
 			'host'     => 'localhost',
 			'port'     => '3306',
 			'database' => '',
@@ -40,6 +42,7 @@ class DatabaseHandler extends PDO
 			'pass'     => ''
 		);
 		
+		$this->_cache    = $settings[ 'cache' ];
 		$this->_host     = $settings[ 'host' ];
 		$this->_port     = $settings[ 'port' ];
 		$this->_database = $settings[ 'database' ];
@@ -77,7 +80,7 @@ class DatabaseHandler extends PDO
 			return;
 		}
 		
-		if( PRODUCTION && APC_EXISTS ) {
+		if( $this->_cache && extension_loaded('apc') ) {
 			$this->_tableSchemata = apc_fetch( "dbcache:schemata:" . $this->getConnectionSignature() );
 			$this->_primaryKeys = apc_fetch( "dbcache:primaryKeys:" . $this->getConnectionSignature() );
 		}
@@ -104,7 +107,7 @@ class DatabaseHandler extends PDO
 				}
 			}
 			
-			if( PRODUCTION && APC_EXISTS ) {
+			if( $this->_cache && extension_loaded('apc') ) {
 				apc_store( "dbcache:schemata:" . $this->getConnectionSignature(), $this->_tableSchemata );
 				apc_store( "dbcache:primaryKeys:" . $this->getConnectionSignature(), $this->_primaryKeys );
 			}
