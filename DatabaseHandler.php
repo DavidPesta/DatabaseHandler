@@ -339,13 +339,13 @@ class DatabaseHandler extends PDO
 			$autoIncrementField = null;
 			
 			foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
-				if( ! is_null( $record[ $field ] ) ) {
+				if( isset( $record[ $field ] ) && ! is_null( $record[ $field ] ) ) {
 					$fields[] = $field;
 					$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
 				}
 				
 				if( $fieldSchema[ 'Extra' ] == "auto_increment" ) $autoIncrementField = $field;
-				if( is_null( $record[ $field ] ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
+				if( ( ! isset( $record[ $field ] ) || is_null( $record[ $field ] ) ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
 			}
 			
 			$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values ( :" . implode( ", :", $fields ) . " )";
