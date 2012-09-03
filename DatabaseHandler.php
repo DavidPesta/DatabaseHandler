@@ -338,16 +338,54 @@ class DatabaseHandler extends PDO
 			
 			$autoIncrementField = null;
 			
-			foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
-				if( isset( $record[ $field ] ) && ! is_null( $record[ $field ] ) ) {
+			// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
+			for( reset( $record ); is_int( key( $record ) ); next( $record ) );
+			if( is_null( key( $record ) ) ) {
+				reset( $record );
+				$newRecord = array();
+				foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+					$newRecord[ $field ] = current( $record );
+
+					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
+					if( ( ! isset( $newRecord[ $field ] ) || $newRecord[ $field ] === false ) && $fieldSchema[ 'Default' ] != null ) $newRecord[ $field ] = $fieldSchema[ 'Default' ];
+
 					$fields[] = $field;
-					$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+					$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $newRecord[ $field ] );
+
+					if( $fieldSchema[ 'Extra' ] == "auto_increment" && ( $newRecord[ $field ] === false || is_null( $newRecord[ $field ] ) ) ) $autoIncrementField = $field;
+					
+					next( $record );
 				}
-				
-				if( $fieldSchema[ 'Extra' ] == "auto_increment" ) $autoIncrementField = $field;
-				if( ( ! isset( $record[ $field ] ) || is_null( $record[ $field ] ) ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
+				$record = $newRecord;
+			}
+			else {
+				foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
+					if( ( ! isset( $record[ $field ] ) || $record[ $field ] === false ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
+
+					if( isset( $record[ $field ] ) ) {
+						$fields[] = $field;
+						$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+					}
+					
+					if(
+						$fieldSchema[ 'Extra' ] == "auto_increment" &&
+						(
+							! isset( $record[ $field ] ) ||
+							(
+								isset( $record[ $field ] ) &&
+								(
+									is_null( $record[ $field ] ) || $record[ $field ] === false
+								)
+							)
+						)
+					) {
+						$autoIncrementField = $field;
+					}
+				}
 			}
 			
+			// TODO: Experiment with pulling the following insert out of the foreach and having this work as a multi-insert statement like bulkInsert; then bulkInsert can be removed entirely
 			$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values ( :" . implode( ", :", $fields ) . " )";
 			$this->execute( $sql, $params );
 			
@@ -363,6 +401,7 @@ class DatabaseHandler extends PDO
 		else return $recordsWithAdjustedValues;
 	}
 	
+	// DEPRECATED by additions made to the insert method, specifically the numeric indexed array based table inserts
 	public function bulkInsert()
 	{
 		$args = func_get_args();

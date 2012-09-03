@@ -139,6 +139,7 @@ echo "<pre>" . print_r( $item, 1 ) . "</pre>";
 
 $items = $dbh->insert( "soldiers", array(
 	array(
+		"soldierId" => 22,
 		"name" => "happy day2",
 		"rank" => "stuff2",
 		"division" => "fun2",
@@ -146,14 +147,27 @@ $items = $dbh->insert( "soldiers", array(
 		"health" => 675
 	),
 	array(
+		"solderId" => null,
 		"name" => "happy day3",
 		"rank" => "stuff3",
-		"division" => "fun3"
+		"division" => "fun3",
+		"health" => null
 	)
 ));
 
 echo "<pre>" . print_r( $items, 1 ) . "</pre>";
 
+$items = $dbh->insert( "soldiers", [ 28, "Funny Joe", "Joker", "great!", 222, 333 ] );
+
+echo "<pre>" . print_r( $items, 1 ) . "</pre>";
+
+$items = $dbh->insert( "soldiers", [
+	[ null,  "One",   "RankOne",   "DivisionOne",   111, false ],
+	[ false, "Two",   "RankTwo",   "DivisionTwo",   222 ],
+	[ null,  "Three", "RankThree", "DivisionThree", 333, null ]
+]);
+
+echo "<pre>" . print_r( $items, 1 ) . "</pre>";
 
 $soldiers = $dbh->fetch( "select * from soldiers" );
 
