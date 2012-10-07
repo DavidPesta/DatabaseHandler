@@ -55,7 +55,7 @@ class DatabaseHandler extends PDO
 		$this->loadTableSchemata();
 	}
 	
-	public function connectToDatabase()
+	private function connectToDatabase()
 	{
 		parent::__construct(
 			'mysql:host=' . $this->_host . ';port=' . $this->_port . ';dbname=' . $this->_database,
@@ -233,8 +233,8 @@ class DatabaseHandler extends PDO
 			}
 			elseif( ! is_array( $keyFields ) ) {
 				$key = $array[ $keyFields ];
-				if( ! is_array( $newResultsRef[ $key ] ) ) {
-					if( $newResultsRef[ $key ] !== null ) {
+				if( ! isset( $newResultsRef[ $key ] ) || ! is_array( $newResultsRef[ $key ] ) ) {
+					if( isset( $newResultsRef[ $key ] ) && $newResultsRef[ $key ] !== null ) {
 						throw new Exception( "Key field collision detected; either use a unique key or null for a key field to prevent collision." );
 					}
 					$newResultsRef[ $key ] = array();
