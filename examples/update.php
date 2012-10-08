@@ -15,17 +15,7 @@ $dbh = new DatabaseHandler( array( "cache" => true ) );
 
 $dbh->createDatabase( "dbhtest" );
 
-$dbh->createTable( "
-	CREATE TABLE IF NOT EXISTS `soldiers` (
-		`soldierId` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-		`name` VARCHAR(255) NOT NULL,
-		`rank` VARCHAR(32) NOT NULL,
-		`division` VARCHAR(32) NOT NULL,
-		`power` INT UNSIGNED,
-		`health` INT UNSIGNED NOT NULL,
-		PRIMARY KEY (`soldierId`)
-	) ENGINE = InnoDB;
-" );
+$dbh->createTables( file_get_contents( "ddls/update.sql" ) );
 
 $dbh->execute( "
 	insert into `soldiers` ( `name`, `rank`, `division`, `power`, `health` ) values

@@ -152,6 +152,35 @@ class DatabaseHandler extends PDO
 		$stmt->execute();
 	}
 	
+	public function createTables( $script )
+	{
+		$startingPoint = "CREATE TABLE IF NOT EXISTS";
+		$endingPoint = "ENGINE = InnoDB;";
+		
+		$script = preg_replace( '/(CREATE)\s+(TABLE IF NOT EXISTS )`\w+`./', '\1 \2', $script );
+		$script = preg_replace( '/(REFERENCES )`\w+`./', '\1', $script );
+		
+		$pieces = preg_split( '/(' . $startingPoint . ')|(' . $endingPoint . ')/', $script, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+		
+		$createTables = array();
+		
+		$tempString = "";
+		foreach( $pieces as $piece ) {
+			if( $piece == $startingPoint ) $tempString = $piece;
+			else $tempString .= $piece;
+			if( $piece == $endingPoint ) {
+				$createTables[] = $tempString;
+				$tempString = "";
+			}
+		}
+		
+		foreach( $createTables as $createTable ) {
+			$this->execute( $createTable );
+		}
+		
+		$this->loadTableSchemata( "force" );
+	}
+	
 	protected static function prepareArgs( $args, & $firstArg, & $remainingArgs )
 	{
 		$num = count( $args );
