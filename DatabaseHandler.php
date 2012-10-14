@@ -510,12 +510,12 @@ class DatabaseHandler extends PDO
 		}
 	}
 	
+	// Warning: For Methods 2 and 3, if all the fields are present, then only the primary key fields are used to find and delete the field.
+	// On the other hand, if all the fields are not fully present, then the fields that are present will be used to find the records to delete.
 	public function delete()
 	{
 		self::prepareArgs( func_get_args(), $arg1, $arg2 );
 		
-		// Method 1: $dbh->delete( "table", array( "primaryKey1", "primaryKey2", "otherField", ... ) );
-		//           $dbh->delete( "table", array( array( "primaryKey1", "primaryKey2", "otherField", ... ), array( ... ), ... ) );
 		if( array_key_exists( $arg1, $this->_tableSchemata ) ) {
 			$table = $arg1;
 			$data = $arg2;
@@ -526,26 +526,77 @@ class DatabaseHandler extends PDO
 			if( ! self::isMultiArray( $data ) ) $data = array( $data );
 			
 			foreach( $data as $record ) {
-				$params = array();
 				
-				$where = "";
-				foreach( $this->_primaryKeys[ $table ] as $key ) {
-					if( $where != "" ) $where .= " and ";
+				// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
+				for( reset( $record ); is_int( key( $record ) ); next( $record ) );
+				if( is_null( key( $record ) ) ) {
 					
-					$where .= "$key = :$key";
+					// Method 1: Zero indexed array found; assume that the first n values match in the right order to all of the first n columns
+					//           $dbh->delete( "table", [ "valueOfField1", "valueOfField2", ... ] );
+					//           $dbh->delete( "table", [ [ "valueOfField1", "valueOfField2", ... ], [ "valueOfField1", "valueOfField2", ... ], ... ] );
 					
-					if( ! isset( $record[ $key ] ) ) throw new Exception( "Delete is being attempted on data that doesn't have primary key data set." );
+					reset( $record );
+					$where = "";
+					$params = array();
+					foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+						$value = current( $record );
+						if( $value === false ) break;
+						
+						if( $where != "" ) $where .= " and ";
+						$where .= "$field = :$field";
+						$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
+						
+						next( $record );
+					}
+				}
+				else {
 					
-					$params[ ":" . $key ] = $record[ $key ];
+					// Method 2: If one or more fields are missing from the record, then take just the fields that are present and use them inside of the where clause
+					//           This is a clean and easy way to delete all records that contain a common value for a column
+					//           !!! There is a rare case that this will not cover, where you want to specify ALL fields for the delete. All non-primary key fields get ignored when all the fields exists as per method 3.
+					//           $dbh->delete( "table", [ [ "field1" => "value" ], [ "field2" => "value" ], ... ] );
+					//           $dbh->delete( "table", [ [ [ "field1" => "value" ], [ "field2" => "value" ], ... ], [ ... ], ... ] );
+					
+					$allFieldsPresent = true;
+					$where = "";
+					$params = array();
+					foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+						if( ! isset( $record[ $field ] ) ) {
+							$allFieldsPresent = false;
+						}
+						else {
+							if( $where != "" ) $where .= " and ";
+							$where .= "$field = :$field";
+							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+						}
+					}
+					
+					if( $allFieldsPresent == true ) {
+						
+						// Method 3: If ALL fields were found in the record, then ONLY use primary keys in the where clause and do NOT put the other fields in the array clause
+						//           This is for situations where a fetch method grabs whole record(s) (records as arrays) and you want to pass that array to this method to delete it
+						//           $dbh->delete( "table", [ [ "primaryKey1" => "value" ], [ "primaryKey2" => "value" ], [ "otherIgnoredField" => "value" ], ... ] );
+						//           $dbh->delete( "table", [ [ [ "primaryKey1" => "value" ], [ "primaryKey2" => "value" ], [ "otherIgnoredField" => "value" ], ... ], [ ... ], ... ] );
+						
+						$where = "";
+						$params = array();
+						foreach( $this->_primaryKeys[ $table ] as $key ) {
+							if( $where != "" ) $where .= " and ";
+							$where .= "$key = :$key";
+							$params[ ":$key" ] = self::formatValueForDatabase( $this->_tableSchemata[ $table ][ $key ], $record[ $key ] );
+						}
+					}
 				}
 				
 				$sql = "delete from " . $table . " where $where";
 				$this->execute( $sql, $params );
 			}
 		}
-		
-		// Method 2: $dbh->delete( "delete from table where ...", ?, ... );
 		else {
+			
+			// Method 4: Table not found as first parameter passed to this delete function; apply sql explicitly
+			//           $dbh->delete( "delete from table where ...", ?, ... );
+			
 			$this->execute( $arg1, $arg2 );
 		}
 	}

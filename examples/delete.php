@@ -81,6 +81,21 @@ $dbh->delete( "soldiers", array(<br>
 &nbsp;&nbsp;&nbsp;&nbsp;array( "soldierId" => 15, "other" => "stuff" ),<br>
 &nbsp;&nbsp;&nbsp;&nbsp;array( "soldierId" => 18, "other" => "stuff" )<br>
 ));<br>
+<br>
+$dbh->delete( "soldiers", [ 9 ] );<br>
+<br>
+$dbh->delete( "soldiers", [ 12, "John MacLeod" ] );<br>
+<br>
+$dbh->delete( "soldiers", [ "division" => "First" ] );<br>
+<br>
+$dbh->delete( "soldiers", [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"soldierId" => 16,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"name" => "Joshua Nice",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"rank" => "Private",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"division" => "Third",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"power" => 4,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"health" => 7<br>
+]);<br>
 
 <?php
 
@@ -95,6 +110,21 @@ $dbh->delete( "soldiers", array(
 	array( "soldierId" => 15, "other" => "stuff" ),
 	array( "soldierId" => 18, "other" => "stuff" )
 ));
+
+$dbh->delete( "soldiers", [ 9 ] );
+
+$dbh->delete( "soldiers", [ 12, "John MacLeod" ] );
+
+$dbh->delete( "soldiers", [ "division" => "First" ] );
+
+$dbh->delete( "soldiers", [
+	"soldierId" => 16,
+	"name" => "Joshua Nice",
+	"rank" => "Private",
+	"division" => "Third",
+	"power" => 4,
+	"health" => 7
+]);
 
 
 $soldiers = $dbh->fetch( "select * from soldiers" );
