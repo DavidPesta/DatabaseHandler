@@ -43,6 +43,8 @@ class DatabaseHandler extends PDO
 			'opt'      => array()
 		);
 		
+		if( isset( $settings[ 'dbname' ] ) ) $settings[ 'database' ] = $settings[ 'dbname' ];
+		
 		$this->_cache    = $settings[ 'cache' ];
 		$this->_host     = $settings[ 'host' ];
 		$this->_port     = $settings[ 'port' ];
