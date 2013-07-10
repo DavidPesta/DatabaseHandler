@@ -256,7 +256,7 @@ class DatabaseHandler extends PDO
 		foreach( $arrays as $array ) {
 			$newResultsRef =& $newResults;
 			
-			if( ! is_array( $array ) ) throw new Exception( get_called_class() . "::groupByKeys must operate on an array of arrays." );
+			if( ! is_array( $array ) ) throw new Exception( get_called_class() . "::groupByKeyValues must operate on an array of arrays. Value used: " . $array );
 			
 			if( $keyFields == null ) {
 				$newResultsRef[] = array();
@@ -266,7 +266,7 @@ class DatabaseHandler extends PDO
 				$key = $array[ $keyFields ];
 				if( ! isset( $newResultsRef[ $key ] ) || ! is_array( $newResultsRef[ $key ] ) ) {
 					if( isset( $newResultsRef[ $key ] ) && $newResultsRef[ $key ] !== null ) {
-						throw new Exception( "Key field collision detected; either use a unique key or null for a key field to prevent collision." );
+						throw new Exception( "Key field collision detected on '" . $keyFields . "'; place '" . $keyFields . "' inside of an array followed by a unique key or null to prevent collision." );
 					}
 					$newResultsRef[ $key ] = array();
 				}
@@ -278,7 +278,7 @@ class DatabaseHandler extends PDO
 					if( $key != null ) {
 						if( ! is_array( $newResultsRef[ $key ] ) ) {
 							if( $newResultsRef[ $key ] !== null ) {
-								throw new Exception( "Key field collision detected; either use a unique key or null for a key field to prevent collision." );
+								throw new Exception( "Key field collision detected on '" . $keyField . "'; add a unique key or null to the array after '" . $keyField . "' to prevent collision." );
 							}
 							$newResultsRef[ $key ] = array();
 						}
@@ -292,7 +292,7 @@ class DatabaseHandler extends PDO
 			}
 			
 			if( ! empty( $newResultsRef ) ) {
-				throw new Exception( "Key field collision detected; either use a unique key or null for a key field to prevent collision." );
+				throw new Exception( "Key field collision detected on '" . $keyField . "'; add a unique key or null to the array after '" . $keyField . "' to prevent collision." );
 			}
 			
 			if( $valueFields == null ) $newResultsRef = $array;

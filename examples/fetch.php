@@ -183,10 +183,10 @@ catch( Exception $ex ) {
 
 
 echo "<br>";
-?><h2 id="collisionsolution1">$dbh->fetchGroup( null, "name", "select * from soldiers" );</h2>
-* Prevent the collision by replacing "division" with either null... (notice the results are zero-indexed)<?php
+?><h2 id="collisionsolution1">$dbh->fetchGroup( array( "division", null ), "name", "select * from soldiers" );</h2>
+* Prevent the collision by replacing "division" with an array with "division" followed by a null element... (notice the results are zero-indexed within each division)<?php
 try {
-	$group = $dbh->fetchGroup( null, "name", "select * from soldiers" );
+	$group = $dbh->fetchGroup( array( "division", null ), "name", "select * from soldiers" );
 	echo "<pre>" . print_r( $group, 1 ) . "</pre>";
 }
 catch( Exception $ex ) {
@@ -195,10 +195,10 @@ catch( Exception $ex ) {
 
 
 echo "<br>";
-?><h2 id="collisionsolution1_2">$dbh->fetchGroup( "soldierId", "name", "select * from soldiers" );</h2>
-* Or prevent the collision by replacing "division" with a unique key. (results are indexed by soldierId)<?php
+?><h2 id="collisionsolution1_2">$dbh->fetchGroup( array( "division", "soldierId" ), "name", "select * from soldiers" );</h2>
+* Or prevent the collision by replacing "division" with an array with "division" followed by a unique key. (results are indexed by soldierId within each division)<?php
 try {
-	$group = $dbh->fetchGroup( "soldierId", "name", "select * from soldiers" );
+	$group = $dbh->fetchGroup( array( "division", "soldierId" ), "name", "select * from soldiers" );
 	echo "<pre>" . print_r( $group, 1 ) . "</pre>";
 }
 catch( Exception $ex ) {
