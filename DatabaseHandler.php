@@ -18,7 +18,7 @@ class DatabaseHandler extends PDO
 	protected $_user;
 	protected $_pass;
 	protected $_opt;
-	protected $_tableSchemata;
+	protected $_schemata;
 	protected $_primaryKeys;
 	
 	public function __construct()
@@ -82,11 +82,11 @@ class DatabaseHandler extends PDO
 	public function loadTableSchemata( $force = null )
 	{
 		if( $this->_database == "" ) {
-			$this->_tableSchemata = null;
+			$this->_schemata = null;
 			return;
 		}
 		
-		$this->_tableSchemata = false;
+		$this->_schemata = false;
 		$this->_primaryKeys = false;
 		
 		if( $this->_cache ) {
@@ -94,7 +94,7 @@ class DatabaseHandler extends PDO
 				$cache = unserialize( file_get_contents( $this->_cacheFile ) );
 				
 				if( isset( $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] ) ) {
-					$this->_tableSchemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
+					$this->_schemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
 				}
 				
 				if( isset( $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] ) ) {
@@ -103,20 +103,20 @@ class DatabaseHandler extends PDO
 			}
 		}
 
-		if( $this->_tableSchemata === false || $this->_primaryKeys === false || $force == "force" ) {
-			$this->_tableSchemata = array();
+		if( $this->_schemata === false || $this->_primaryKeys === false || $force == "force" ) {
+			$this->_schemata = array();
 			
 			$stmtTables = $this->execute( "show tables" );
 			while( $tableRecord = $stmtTables->fetch( PDO::FETCH_NUM ) ) {
 				$tableName = $tableRecord[ 0 ];
 				
-				$this->_tableSchemata[ $tableName ] = array();
+				$this->_schemata[ $tableName ] = array();
 				$this->_primaryKeys[ $tableName ] = array();
 				
 				$stmtSchema = $this->execute( "describe " . $tableName );
 				while( $schemaRecord = $stmtSchema->fetch( PDO::FETCH_ASSOC ) ) {
 					$fieldName = $schemaRecord[ 'Field' ];
-					$this->_tableSchemata[ $tableName ][ $fieldName ] = $schemaRecord;
+					$this->_schemata[ $tableName ][ $fieldName ] = $schemaRecord;
 					if( $schemaRecord[ 'Key' ] == "PRI" ) $this->_primaryKeys[ $tableName ][] = $fieldName;
 				}
 			}
@@ -126,7 +126,7 @@ class DatabaseHandler extends PDO
 				
 				if( ! isset( $cache ) || ! is_array( $cache ) ) $cache = [];
 				
-				$cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] = $this->_tableSchemata;
+				$cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] = $this->_schemata;
 				$cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] = $this->_primaryKeys;
 				
 				if( $this->_cachePath != "" && ! is_dir( $this->_cachePath ) ) mkdir( $this->_cachePath, 0777, true );
@@ -215,7 +215,7 @@ class DatabaseHandler extends PDO
 	{
 		$createSchemata = "";
 		
-		foreach( $this->_tableSchemata as $tableName => $columns ) {
+		foreach( $this->_schemata as $tableName => $columns ) {
 			if( $createSchemata != "" ) $createSchemata .= "\n\n";
 			$createSchemata .= $this->fetchCreateTable( $tableName );
 		}
@@ -414,7 +414,7 @@ class DatabaseHandler extends PDO
 			if( is_null( key( $record ) ) ) {
 				reset( $record );
 				$newRecord = array();
-				foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 					$newRecord[ $field ] = current( $record );
 
 					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
@@ -430,7 +430,7 @@ class DatabaseHandler extends PDO
 				$record = $newRecord;
 			}
 			else {
-				foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
 					if( ( ! isset( $record[ $field ] ) || $record[ $field ] === false ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
 
@@ -493,10 +493,10 @@ class DatabaseHandler extends PDO
 				$fieldBinding = $field . "_" . $recordNum;
 				$fieldBindings[] = $fieldBinding;
 				if( is_null( $record[ $fieldNum ] ) ) {
-					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_tableSchemata[ $table ][ $field ], $this->_tableSchemata[ $table ][ $field ][ 'Default' ] );
+					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_schemata[ $table ][ $field ], $this->_schemata[ $table ][ $field ][ 'Default' ] );
 				}
 				else {
-					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_tableSchemata[ $table ][ $field ], $record[ $fieldNum ] );
+					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_schemata[ $table ][ $field ], $record[ $fieldNum ] );
 				}
 				$fieldNum++;
 			}
@@ -536,7 +536,7 @@ class DatabaseHandler extends PDO
 			}
 			
 			$update = "";
-			foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+			foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 				if( array_key_exists( $field, $record ) ) {
 					if( $update != "" ) $update .= ", ";
 					$update .= "$field = :$field";
@@ -558,7 +558,7 @@ class DatabaseHandler extends PDO
 	{
 		self::prepareArgs( func_get_args(), $arg1, $arg2 );
 		
-		if( array_key_exists( $arg1, $this->_tableSchemata ) ) {
+		if( array_key_exists( $arg1, $this->_schemata ) ) {
 			$table = $arg1;
 			$data = $arg2;
 			
@@ -580,7 +580,7 @@ class DatabaseHandler extends PDO
 					reset( $record );
 					$where = "";
 					$params = array();
-					foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 						$value = current( $record );
 						if( $value === false ) break;
 						
@@ -602,7 +602,7 @@ class DatabaseHandler extends PDO
 					$allFieldsPresent = true;
 					$where = "";
 					$params = array();
-					foreach( $this->_tableSchemata[ $table ] as $field => $fieldSchema ) {
+					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 						if( ! isset( $record[ $field ] ) ) {
 							$allFieldsPresent = false;
 						}
@@ -625,7 +625,7 @@ class DatabaseHandler extends PDO
 						foreach( $this->_primaryKeys[ $table ] as $key ) {
 							if( $where != "" ) $where .= " and ";
 							$where .= "$key = :$key";
-							$params[ ":$key" ] = self::formatValueForDatabase( $this->_tableSchemata[ $table ][ $key ], $record[ $key ] );
+							$params[ ":$key" ] = self::formatValueForDatabase( $this->_schemata[ $table ][ $key ], $record[ $key ] );
 						}
 					}
 				}
