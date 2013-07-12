@@ -64,6 +64,11 @@ echo "</table>";
 ?>
 
 <br>
+<u>Explanation:</u><br>
+<br>
+The way this works may seem unintuitive at first, depending on how you look at it. You might expect to pass an update function an array of primary keys and a separate array of field/values to update. But instead, they are all found in the same array. There is a particular paradigm behind how update works. Imagine that you had just performed a fetch and have an associative array of field names and their values. The primary key(s) and its value(s) are also found in the array from this fetch. Make a change to one or more of the values, then turn right around and pass that same array directly into the update method to set those values to the database. Simple and elegant. The primary key fields are automatically detected and placed into the where clause. But, what if you are wanting to update stuff for a record that has nothing to do with the primary key? Well, you can do that by specifying any weird combination of fields in your fetch, so this is done at the fetch step. Any strange conditions that you are wanting to do the update on, those strange conditions would be a part of your fetch so that your update would just be normal based on the primary keys that are also returned from fetching the records.<br>
+
+<br>
 <u>Click on the links to see how the examples behave:</u><br>
 <br>
 <a href="#update1" class="jumpLink">
