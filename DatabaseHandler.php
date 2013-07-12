@@ -203,6 +203,26 @@ class DatabaseHandler extends PDO
 		$this->loadTableSchemata( "force" );
 	}
 	
+	public function fetchCreateTable( $table )
+	{
+		$stmt = $this->prepare( "SHOW CREATE TABLE $table" );
+		$stmt->execute();
+		
+		return $stmt->fetch( PDO::FETCH_ASSOC )[ 'Create Table' ];
+	}
+	
+	public function fetchCreateSchemata()
+	{
+		$createSchemata = "";
+		
+		foreach( $this->_tableSchemata as $tableName => $columns ) {
+			if( $createSchemata != "" ) $createSchemata .= "\n\n";
+			$createSchemata .= $this->fetchCreateTable( $tableName );
+		}
+		
+		return $createSchemata;
+	}
+	
 	protected static function prepareArgs( $args, & $firstArg, & $remainingArgs )
 	{
 		$num = count( $args );
