@@ -134,7 +134,7 @@ class DatabaseHandler extends PDO
 			}
 		}
 	}
-
+	
 	public function fetchSchemata()
 	{
 		return $this->_schemata;
@@ -254,6 +254,11 @@ class DatabaseHandler extends PDO
 		$stmt->execute( $params );
 		
 		return $stmt;
+	}
+	
+	public function resetAutoIncrement( $tableName )
+	{
+		$this->execute( "ALTER TABLE $tableName AUTO_INCREMENT = 1" );
 	}
 	
 	public function fetchOne()
