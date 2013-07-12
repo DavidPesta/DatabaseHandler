@@ -134,6 +134,11 @@ class DatabaseHandler extends PDO
 			}
 		}
 	}
+
+	public function fetchSchemata()
+	{
+		return $this->_schemata;
+	}
 	
 	public function fetchConfig()
 	{
