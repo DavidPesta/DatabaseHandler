@@ -1,7 +1,7 @@
 <?php
 
 /*
-* Copyright (c) 2012 David Pesta, https://github.com/DavidPesta/DatabaseHandler
+* Copyright (c) 2012-2013 David Pesta, https://github.com/DavidPesta/DatabaseHandler
 * This file is licensed under the MIT License.
 * You should have received a copy of the MIT License along with this program.
 * If not, see http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,8 @@
 class DatabaseHandler extends PDO
 {
 	protected $_cache;
+	protected $_cachePath;
+	protected $_cacheFile;
 	protected $_host;
 	protected $_port;
 	protected $_database;
@@ -34,24 +36,27 @@ class DatabaseHandler extends PDO
 		}
 		
 		$settings += array(
-			'cache'    => false,
-			'host'     => 'localhost',
-			'port'     => '3306',
-			'database' => '',
-			'user'     => 'root',
-			'pass'     => '',
-			'opt'      => array()
+			'cache'     => false,
+			'cachePath' => "",
+			'host'      => 'localhost',
+			'port'      => '3306',
+			'database'  => '',
+			'user'      => 'root',
+			'pass'      => '',
+			'opt'       => array()
 		);
 		
 		if( isset( $settings[ 'dbname' ] ) ) $settings[ 'database' ] = $settings[ 'dbname' ];
 		
-		$this->_cache    = $settings[ 'cache' ];
-		$this->_host     = $settings[ 'host' ];
-		$this->_port     = $settings[ 'port' ];
-		$this->_database = $settings[ 'database' ];
-		$this->_user     = $settings[ 'user' ];
-		$this->_pass     = $settings[ 'pass' ];
-		$this->_opt      = $settings[ 'opt' ];
+		$this->_cache     = $settings[ 'cache' ];
+		$this->_cachePath = $settings[ 'cachePath' ];
+		$this->_cacheFile = $this->_cachePath == "" ? "DatabaseHandler.cache" : $this->_cachePath . DIRECTORY_SEPARATOR . "DatabaseHandler.cache";
+		$this->_host      = $settings[ 'host' ];
+		$this->_port      = $settings[ 'port' ];
+		$this->_database  = $settings[ 'database' ];
+		$this->_user      = $settings[ 'user' ];
+		$this->_pass      = $settings[ 'pass' ];
+		$this->_opt       = $settings[ 'opt' ];
 		
 		$this->connectToDatabase();
 		$this->loadTableSchemata();
@@ -81,15 +86,23 @@ class DatabaseHandler extends PDO
 			return;
 		}
 		
-		if( $this->_cache && extension_loaded('apc') ) {
-			$this->_tableSchemata = apc_fetch( "dbcache:schemata:" . $this->getConnectionSignature() );
-			$this->_primaryKeys = apc_fetch( "dbcache:primaryKeys:" . $this->getConnectionSignature() );
-		}
-		else {
-			$this->_tableSchemata = false;
-			$this->_primaryKeys = false;
-		}
+		$this->_tableSchemata = false;
+		$this->_primaryKeys = false;
 		
+		if( $this->_cache ) {
+			if( is_file( $this->_cacheFile ) ) {
+				$cache = unserialize( file_get_contents( $this->_cacheFile ) );
+				
+				if( isset( $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] ) ) {
+					$this->_tableSchemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
+				}
+				
+				if( isset( $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] ) ) {
+					$this->_primaryKeys = $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ];
+				}
+			}
+		}
+
 		if( $this->_tableSchemata === false || $this->_primaryKeys === false || $force == "force" ) {
 			$this->_tableSchemata = array();
 			
@@ -108,9 +121,16 @@ class DatabaseHandler extends PDO
 				}
 			}
 			
-			if( $this->_cache && extension_loaded('apc') ) {
-				apc_store( "dbcache:schemata:" . $this->getConnectionSignature(), $this->_tableSchemata );
-				apc_store( "dbcache:primaryKeys:" . $this->getConnectionSignature(), $this->_primaryKeys );
+			if( $this->_cache ) {
+				if( is_file( $this->_cacheFile ) ) $cache = unserialize( file_get_contents( $this->_cacheFile ) );
+				
+				if( ! isset( $cache ) || ! is_array( $cache ) ) $cache = [];
+				
+				$cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] = $this->_tableSchemata;
+				$cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] = $this->_primaryKeys;
+				
+				if( $this->_cachePath != "" && ! is_dir( $this->_cachePath ) ) mkdir( $this->_cachePath, 0777, true );
+				file_put_contents( $this->_cacheFile, serialize( $cache ), LOCK_EX );
 			}
 		}
 	}
