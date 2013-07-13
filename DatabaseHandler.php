@@ -181,8 +181,14 @@ class DatabaseHandler extends PDO
 	
 	public function dropDatabase()
 	{
-		$stmt = $this->prepare( "drop database " . $this->_database );
-		$stmt->execute();
+		if( $this->_database == "" ) return;
+		
+		$found = $this->fetchValue( "SELECT IF( '" . $this->_database . "' IN( SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ), 1, 0 ) AS found" );
+		
+		if( $found == 1 ) {
+			$stmt = $this->prepare( "drop database " . $this->_database );
+			$stmt->execute();
+		}
 	}
 	
 	public function createTables( $script )
