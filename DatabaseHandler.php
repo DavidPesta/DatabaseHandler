@@ -9,6 +9,7 @@
 
 class DatabaseHandler extends PDO
 {
+	protected $_connected = false;
 	protected $_cache;
 	protected $_cachePath;
 	protected $_cacheFile;
@@ -47,6 +48,7 @@ class DatabaseHandler extends PDO
 		);
 		
 		if( isset( $settings[ 'dbname' ] ) ) $settings[ 'database' ] = $settings[ 'dbname' ];
+		$settings[ 'opt' ][ PDO::ATTR_PERSISTENT ] = false;
 		
 		$this->_cache     = $settings[ 'cache' ];
 		$this->_cachePath = $settings[ 'cachePath' ];
@@ -64,6 +66,8 @@ class DatabaseHandler extends PDO
 	
 	private function connectToDatabase()
 	{
+		if( $this->_connected == true ) return;
+		
 		parent::__construct(
 			'mysql:host=' . $this->_host . ';port=' . $this->_port . ';dbname=' . $this->_database,
 			$this->_user,
@@ -72,6 +76,8 @@ class DatabaseHandler extends PDO
 		);
 		
 		$this->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+		
+		$this->_connected = true;
 	}
 	
 	public function getConnectionSignature()
@@ -163,7 +169,7 @@ class DatabaseHandler extends PDO
 	public function useDatabase( $database )
 	{
 		$this->_database = $database;
-		$this->connectToDatabase();
+		$this->execute( "use " . $this->_database );
 		$this->loadTableSchemata();
 	}
 	
