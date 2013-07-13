@@ -1,7 +1,7 @@
 <?php
 
 /*
-* Copyright (c) 2012 David Pesta, https://github.com/DavidPesta/DatabaseHandler
+* Copyright (c) 2012-2013 David Pesta, https://github.com/DavidPesta/DatabaseHandler
 * This file is licensed under the MIT License.
 * You should have received a copy of the MIT License along with this program.
 * If not, see http://www.opensource.org/licenses/mit-license.php
@@ -11,7 +11,7 @@ error_reporting( E_ALL & ~ ( E_STRICT | E_NOTICE ) );
 
 include "../DatabaseHandler.php";
 
-$dbh = new DatabaseHandler( array( "cache" => true ) );
+$dbh = new DatabaseHandler();
 
 $dbh->createDatabase( "dbhtest" );
 
