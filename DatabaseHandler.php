@@ -10,6 +10,7 @@
 class DatabaseHandler extends PDO
 {
 	protected $_connected = false;
+	protected $_transactionLevel = 0;
 	protected $_cache;
 	protected $_cachePath;
 	protected $_cacheFile;
@@ -663,5 +664,56 @@ class DatabaseHandler extends PDO
 			
 			$this->execute( $arg1, $arg2 );
 		}
+	}
+	
+	public function beginTransaction()
+	{
+		if( $this->transactionLevel == 0 ) {
+			$response = parent::beginTransaction();
+			if( $response == true ) $this->transactionLevel++;
+			return $response;
+		}
+		
+		$this->transactionLevel++;
+		
+		return true;
+	}
+	
+	public function commit()
+	{
+		if( $this->transactionLevel == 0 ) throw new Exception( "Commit cannot be performed when there is no transaction in progress." );
+		
+		if( $this->transactionLevel == 1 ) {
+			$this->transactionLevel = 0;
+			return parent::commit();
+		}
+		
+		$this->transactionLevel--;
+		
+		return true;
+	}
+	
+	public function rollback()
+	{
+		if( $this->transactionLevel == 0 ) throw new Exception( "Rollback cannot be performed when there is no transaction in progress." );
+		
+		if( $this->transactionLevel == 1 ) {
+			$this->transactionLevel = 0;
+			return parent::rollback();
+		}
+		
+		$this->transactionLevel--;
+		
+		return true;
+	}
+	
+	public function inTransaction()
+	{
+		return $this->transactionLevel > 0;
+	}
+	
+	public function transactionLevel()
+	{
+		return $this->transactionLevel;
 	}
 }
