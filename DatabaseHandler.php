@@ -174,12 +174,6 @@ class DatabaseHandler extends PDO
 		$this->loadTableSchemata();
 	}
 	
-	public function createTable( $sql )
-	{
-		$this->execute( $sql );
-		$this->loadTableSchemata( "force" );
-	}
-	
 	public function dropDatabase()
 	{
 		if( $this->_database == "" ) return;
@@ -190,6 +184,12 @@ class DatabaseHandler extends PDO
 			$stmt = $this->prepare( "drop database " . $this->_database );
 			$stmt->execute();
 		}
+	}
+	
+	public function createTable( $sql )
+	{
+		$this->execute( $sql );
+		$this->loadTableSchemata( "force" );
 	}
 	
 	public function createTables( $script )
