@@ -720,4 +720,35 @@ class DatabaseHandler extends PDO
 	{
 		return $this->transactionLevel;
 	}
+	
+	public function deadlockSafeTransaction( $codeFunction )
+	{
+		do {
+			$retry = false;
+			
+			try {
+				$this->beginTransaction();
+				
+				$response = $codeFunction( $this );
+				
+				$this->commit();
+			}
+			catch( exception $ex ) {
+				$this->rollBack();
+				
+				if( $ex->getCode() == 48047 ) { // Return a custom abort message via an abort exception; 48047 is a clever numerical representation of "ABORT"
+					if( ! $this->inTransaction() ) return $ex->getMessage();
+				}
+				
+				if( $ex->getCode() == 40001 ) { // Deadlock found, retry; can also throw an exception with error code 40001 to trigger this retry
+					if( $this->inTransaction() ) throw $ex;
+					$retry = true;
+					usleep( mt_rand( 5000, 100000 ) );
+				}
+				else throw $ex;
+			}
+		} while( $retry );
+		
+		return $response;
+	}
 }
