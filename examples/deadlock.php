@@ -134,18 +134,14 @@ if( empty( $_GET ) ) {
 			2 => 2,
 			5 => 'sleep',
 			6 => 6
-		],
-		'inner1' => 0,
-		'inner2' => 0
+		]
 	];
 	
 	$settings2 = [
 		'position' => [
 			2 => 6,
 			6 => 2
-		],
-		'inner1' => 0,
-		'inner2' => 0
+		]
 	];
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 6</a><br>";
@@ -183,8 +179,7 @@ if( empty( $_GET ) ) {
 			3 => 'sleep',
 			4 => 4
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	$settings2 = [
@@ -192,8 +187,7 @@ if( empty( $_GET ) ) {
 			2 => 4,
 			4 => 2
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 4</a><br>";
@@ -207,8 +201,7 @@ if( empty( $_GET ) ) {
 			4 => 'sleep',
 			5 => 5
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	$settings2 = [
@@ -216,8 +209,7 @@ if( empty( $_GET ) ) {
 			3 => 5,
 			5 => 3
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 3, sleep, then fetch id 5</a><br>";
@@ -234,7 +226,6 @@ if( empty( $_GET ) ) {
 			5 => 5
 		],
 		'inner1' => 1,
-		'inner2' => 0,
 		'forceDelete' => 1
 	];
 	
@@ -251,7 +242,6 @@ if( empty( $_GET ) ) {
 			5 => 7
 		],
 		'inner1' => 1,
-		'inner2' => 0,
 		'forceDelete' => 1
 	];
 	
@@ -264,15 +254,13 @@ if( empty( $_GET ) ) {
 			3 => 12,
 			5 => 'sleep'
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	$settings2 = [
 		'position' => [
 			7 => 12
 		],
-		'inner1' => 0,
 		'inner2' => 1
 	];
 	
@@ -287,8 +275,7 @@ if( empty( $_GET ) ) {
 			2 => 'sleep',
 			3 => 15
 		],
-		'inner1' => 1,
-		'inner2' => 0
+		'inner1' => 1
 	];
 	
 	$settings2 = [
@@ -296,7 +283,6 @@ if( empty( $_GET ) ) {
 			7 => 15,
 			9 => 12
 		],
-		'inner1' => 0,
 		'inner2' => 1
 	];
 	
