@@ -32,12 +32,22 @@ class Transactions
 			throw new Exception( "Transaction aborted at position " . $position, 48047 );
 		}
 		
-		if( ctype_digit( strval( $positionValue ) ) && $positionValue >= 1 && $positionValue <= 10 ) {
-			$record = $dbh->fetchOne( "select * from test where id = ? for update", $positionValue );
+		if( ctype_digit( strval( $positionValue ) ) && $positionValue >= 1 ) {
+			
+			// Less than or equal to 10, use a normal fetch with for update
+			if( $positionValue <= 10 ) {
+				$record = $dbh->fetchOne( "select * from test where id = ? for update", $positionValue );
+				echo "; SELECT...FOR UPDATE performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
+			}
+			
+			// Greater than 10, use a safeFetchForUpdate
+			if( $positionValue > 10 ) {
+				$record = $dbh->safeFetchForUpdate( "test", [ "id" => $positionValue ] );
+				echo "; safeFetchForUpdate performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
+			}
+			
 			$record[ 'name' ] = $position;
 			$records[] = $record;
-			
-			echo "; SELECT...FOR UPDATE PERFORMED: " . $record[ 'id' ] . ": " . $record[ 'name' ];
 		}
 	}
 	
@@ -257,6 +267,55 @@ if( empty( $_GET ) ) {
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 10, 9, 8, abort, then 7</a><br><br>";
 	
+	echo "Simple test of safeFetchForUpdate:<br>";
+	
+	$settings1 = [
+		'position' => [
+			3 => 12,
+			5 => 'sleep'
+		],
+		'sleepTime' => 10,
+		'inner1' => 1,
+		'inner2' => 0
+	];
+	
+	$settings2 = [
+		'position' => [
+			7 => 12
+		],
+		'sleepTime' => 10,
+		'inner1' => 0,
+		'inner2' => 1
+	];
+	
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12</a><br><br>";
+	
+	echo "Deadlock test of safeFetchForUpdate:<br>";
+	
+	$settings1 = [
+		'position' => [
+			1 => 12,
+			2 => 'sleep',
+			3 => 15
+		],
+		'sleepTime' => 10,
+		'inner1' => 1,
+		'inner2' => 0
+	];
+	
+	$settings2 = [
+		'position' => [
+			7 => 15,
+			9 => 12
+		],
+		'sleepTime' => 10,
+		'inner1' => 0,
+		'inner2' => 1
+	];
+	
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep, then perform safeFetchForUpdate on id of 15</a><br>";
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 15, then perform safeFetchForUpdate on id of 12</a><br><br>";
 }
 else {
 	include "../DatabaseHandler.php";

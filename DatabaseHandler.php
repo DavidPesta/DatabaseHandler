@@ -751,4 +751,116 @@ class DatabaseHandler extends PDO
 		
 		return $response;
 	}
+	
+	/*
+	* The safeFetchForUpdate method fulfills the following use-case scenario:
+	* There is a table record that may or may not exist, which has a specific primary key that is not auto_increment, and you want to create or update that
+	* table record after peeking at its values and you want to block any other transaction that may want to do the same such that no transaction will wipe out
+	* each other's update without at least having the opportunity to peek at that record's values during its exclusive lock.
+	*
+	* Special note: The reason "insert...on duplicate key update" is dangerous is because two transactions could fire that off at a nearly identical moment and
+	* one transaction would overwrite the update of the other transaction without having a chance to peek at its values first. Using the safeFetchForUpdate
+	* method is the better approach because it gets inserted right away (if it didn't exist) and then blocks for peeking at the values before updating.
+	*/
+	public function safeFetchForUpdate()
+	{
+		self::prepareArgs( func_get_args(), $table, $args );
+		
+		$where = "";
+		$params = array();
+		
+		foreach( $this->_primaryKeys[ $table ] as $key ) {
+			if( ! isset( $args[ $key ] ) ) {
+				throw new Exception( "safeFetchForUpdate requires an array of key => value pairs for its primary key values" );
+			}
+			
+			if( $where != "" ) $where .= " and ";
+			$where .= "$key = :$key";
+			$params[ ":$key" ] = $args[ $key ];
+		}
+		
+		$record = $this->fetchOne( "select * from $table where $where limit 1 for update", $params );
+		
+		if( $record == null ) {
+			$data = [];
+			
+			foreach( $this->_schemata[ $table ] as $field => $schema ) {
+				if( array_search( $field, $this->_primaryKeys[ $table ] ) !== false ) {
+					$data[ $field ] = $args[ $field ];
+					continue;
+				}
+				
+				if( $schema[ 'Default' ] !== null ) {
+					$data[ $field ] = $schema[ 'Default' ];
+					continue;
+				}
+				
+				if( $schema[ 'Null' ] == "YES" ) {
+					$data[ $field ] = null;
+					continue;
+				}
+				
+				$type = strtolower( explode( "(", $schema[ 'Type' ] )[ 0 ] );
+				
+				switch( $type ) {
+					case 'tinyint':
+					case 'smallint':
+					case 'mediumint':
+					case 'int':
+					case 'integer':
+					case 'bigint':
+					case 'float':
+					case 'double':
+					case 'decimal':
+					case 'numeric':
+						$data[ $field ] = 0;
+						break;
+					
+					case 'char':
+					case 'varchar':
+					case 'tinytext':
+					case 'text':
+					case 'mediumtext':
+					case 'longtext':
+					case 'tinyblob':
+					case 'blob':
+					case 'mediumblob':
+					case 'longblob':
+						$data[ $field ] = "";
+						break;
+					
+					case 'datetime':
+						$data[ $field ] = "0000-00-00 00:00:00";
+						break;
+					
+					case 'date':
+						$data[ $field ] = "0000-00-00";
+						break;
+					
+					case 'time':
+						$data[ $field ] = "00:00:00";
+						break;
+					
+					case 'year':
+						$data[ $field ] = "0000";
+						break;
+					
+					case 'timestamp':
+						// timestamp datatype is set to current time automatically
+						break;
+					
+					default:
+						throw new Exception( "'$type' is not a recognized data type in safeFetchForUpdate and may need to be added" );
+				}
+			}
+			
+			try {
+				$this->insert( $table, $data ); // If a race condition causes this record to already exist, we want it to fail silently here
+			} catch( Exception $ex ) {}
+			
+			$record = $this->fetchOne( "select * from $table where $where limit 1 for update", $params );
+		}
+		
+		return $record;
+	}
 }
