@@ -34,14 +34,12 @@ class Transactions
 		
 		if( ctype_digit( strval( $positionValue ) ) && $positionValue >= 1 ) {
 			
-			// Less than or equal to 10, use a normal fetch with for update
-			if( $positionValue <= 10 ) {
+			if( $settings[ 'safe' ] != 1 ) {
 				$record = $dbh->fetchOne( "select * from test where id = ? for update", $positionValue );
 				echo "; SELECT...FOR UPDATE performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
 			}
 			
-			// Greater than 10, use a safeFetchForUpdate
-			if( $positionValue > 10 ) {
+			if( $settings[ 'safe' ] == 1 ) {
 				$record = $dbh->safeFetchForUpdate( "test", [ "id" => $positionValue ] );
 				echo "; safeFetchForUpdate performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
 			}
@@ -114,6 +112,9 @@ function setDatabase() {
 		( 9, 'nine' ),
 		( 10, 'ten' )
 	");
+	//  Add 12 and 15 when testing the "Insert test of safeFetchForUpdate" to see that the insert was actually locking the whole table
+	//	( 12, 'twelve' ),
+	//	( 15, 'fifteen' )
 	//	( , '' ),
 }
 
@@ -267,7 +268,8 @@ if( empty( $_GET ) ) {
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12</a><br><br>";
 	
-	echo "Deadlock test of safeFetchForUpdate:<br>";
+	echo "Insert test of safeFetchForUpdate:<br>";
+	echo "Gotcha: The entire table is locked when the first thread inserts id 12, so the other thread is blocked at position 7 until the first thread finishes.<br>";
 	
 	$settings1 = [
 		'position' => [
@@ -275,19 +277,45 @@ if( empty( $_GET ) ) {
 			2 => 'sleep',
 			3 => 15
 		],
-		'inner1' => 1
+		'inner1' => 1,
+		'safe'   => 1
 	];
 	
 	$settings2 = [
 		'position' => [
 			7 => 15,
-			9 => 12
+			9 => 12  // Remove this line to see that the table is indeed locked as a result of the id 12 insert in the other thread
 		],
-		'inner2' => 1
+		'inner2' => 1,
+		'safe'   => 1
 	];
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep, then perform safeFetchForUpdate on id of 15</a><br>";
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 15, then perform safeFetchForUpdate on id of 12</a><br><br>";
+	
+	echo "Deadlock test of safeFetchForUpdate:<br>";
+	
+	$settings1 = [
+		'position' => [
+			1 => 2,
+			2 => 'sleep',
+			3 => 5
+		],
+		'inner1' => 1,
+		'safe'   => 1
+	];
+	
+	$settings2 = [
+		'position' => [
+			7 => 5,
+			9 => 2
+		],
+		'inner2' => 1,
+		'safe'   => 1
+	];
+	
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 2, then sleep, then perform safeFetchForUpdate on id of 5</a><br>";
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 5, then perform safeFetchForUpdate on id of 2</a><br><br>";
 }
 else {
 	include "../DatabaseHandler.php";
