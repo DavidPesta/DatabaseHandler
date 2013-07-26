@@ -301,7 +301,7 @@ else {
 	$results = $dbh->fetchGroup( "id", "name", "select * from test" );
 	
 	if( $results[ 11 ] != null || $_GET[ 'forceDelete' ] == 1 ) $dbh->dropDatabase();
-	else $dbh->insert( "test", [ 11,  "finished" ] );
+	else $dbh->execute( "insert into test ( id, name ) values ( 11,  'finished' ) on duplicate key update id = id" );
 	
 	echo "<pre>" . print_r( $results, 1 ) . "</pre>";
 }
