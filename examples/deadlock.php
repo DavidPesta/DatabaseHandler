@@ -18,7 +18,7 @@ class Transactions
 		if( $positionValue != null ) echo "<br>codePosition - Position: $position; Value: $positionValue";
 		
 		if( $positionValue == 'sleep' ) {
-			sleep( $settings[ 'sleepTime' ] );
+			sleep( $settings[ 'sleepTime' ] ?: 10 );
 			return;
 		}
 		
@@ -135,7 +135,6 @@ if( empty( $_GET ) ) {
 			5 => 'sleep',
 			6 => 6
 		],
-		'sleepTime' => 10,
 		'inner1' => 0,
 		'inner2' => 0
 	];
@@ -145,7 +144,6 @@ if( empty( $_GET ) ) {
 			2 => 6,
 			6 => 2
 		],
-		'sleepTime' => 10,
 		'inner1' => 0,
 		'inner2' => 0
 	];
@@ -161,7 +159,6 @@ if( empty( $_GET ) ) {
 			7 => 'sleep',
 			8 => 8
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 1
 	];
@@ -171,7 +168,6 @@ if( empty( $_GET ) ) {
 			4 => 8,
 			8 => 4
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 1
 	];
@@ -187,7 +183,6 @@ if( empty( $_GET ) ) {
 			3 => 'sleep',
 			4 => 4
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -197,7 +192,6 @@ if( empty( $_GET ) ) {
 			2 => 4,
 			4 => 2
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -213,7 +207,6 @@ if( empty( $_GET ) ) {
 			4 => 'sleep',
 			5 => 5
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -223,7 +216,6 @@ if( empty( $_GET ) ) {
 			3 => 5,
 			5 => 3
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -241,7 +233,6 @@ if( empty( $_GET ) ) {
 			4 => 'retry',
 			5 => 5
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0,
 		'forceDelete' => 1
@@ -259,7 +250,6 @@ if( empty( $_GET ) ) {
 			4 => 'abort',
 			5 => 7
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0,
 		'forceDelete' => 1
@@ -274,7 +264,6 @@ if( empty( $_GET ) ) {
 			3 => 12,
 			5 => 'sleep'
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -283,7 +272,6 @@ if( empty( $_GET ) ) {
 		'position' => [
 			7 => 12
 		],
-		'sleepTime' => 10,
 		'inner1' => 0,
 		'inner2' => 1
 	];
@@ -299,7 +287,6 @@ if( empty( $_GET ) ) {
 			2 => 'sleep',
 			3 => 15
 		],
-		'sleepTime' => 10,
 		'inner1' => 1,
 		'inner2' => 0
 	];
@@ -309,7 +296,6 @@ if( empty( $_GET ) ) {
 			7 => 15,
 			9 => 12
 		],
-		'sleepTime' => 10,
 		'inner1' => 0,
 		'inner2' => 1
 	];
