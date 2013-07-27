@@ -18,7 +18,14 @@ class Transactions
 		if( $positionValue != null ) echo "<br>codePosition - Position: $position; Value: $positionValue";
 		
 		if( $positionValue == 'sleep' ) {
+			$beforeMicrotime = microtime( true );
+			
 			sleep( $settings[ 'sleepTime' ] ?: 10 );
+			
+			$afterMicrotime = microtime( true );
+			$waitTime = $afterMicrotime - $beforeMicrotime;
+			echo "; BeforeMicrotime: $beforeMicrotime; WaitTime: $waitTime; AfterMicrotime: $afterMicrotime";
+			
 			return;
 		}
 		
@@ -33,16 +40,21 @@ class Transactions
 		}
 		
 		if( ctype_digit( strval( $positionValue ) ) && $positionValue >= 1 ) {
+			$beforeMicrotime = microtime( true );
 			
 			if( $settings[ 'safe' ] != 1 ) {
 				$record = $dbh->fetchOne( "select * from test where id = ? for update", $positionValue );
-				echo "; SELECT...FOR UPDATE performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
+				echo "; SELECT...FOR UPDATE performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ];
 			}
 			
 			if( $settings[ 'safe' ] == 1 ) {
 				$record = $dbh->safeFetchForUpdate( "test", [ "id" => $positionValue ] );
-				echo "; safeFetchForUpdate performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ] . "; microtime: " . microtime( true );
+				echo "; safeFetchForUpdate performed; current record: " . $record[ 'id' ] . ": " . $record[ 'name' ];
 			}
+			
+			$afterMicrotime = microtime( true );
+			$waitTime = $afterMicrotime - $beforeMicrotime;
+			echo "; BeforeMicrotime: $beforeMicrotime; WaitTime: $waitTime; AfterMicrotime: $afterMicrotime";
 			
 			$record[ 'name' ] = $position;
 			$records[] = $record;
