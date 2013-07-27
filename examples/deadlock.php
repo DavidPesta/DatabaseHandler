@@ -126,7 +126,8 @@ if( empty( $_GET ) ) {
 	echo "- When a select...for update happens for a record, that record is 'being updated in progress' starting at that instant and completing upon commit<br>";
 	echo "- A normal select without for update should be able to retrieve that value because it doesn't matter to a select whether it gets data before or after an update; this happens all the time with normal selects that happen near normal updates; so the commit is when the update actually happens as far as a normal select is concerned<br>";
 	echo "- Regular updates to the same record does block, which makes sense because only one 'update in progress' to a record can happen at a time, so it must wait its turn; a regular update is no different than a select...for update in terms of it being an update that must wait until a current update in progress is finished<br>";
-	echo "- And finally, other select...for updates for that record also block for the same reason, only one 'update in progress' can happen at a time and must wait its turn<br><br>";
+	echo "- And finally, other select...for updates for that record also block for the same reason, only one 'update in progress' can happen at a time and must wait its turn<br>";
+	echo "Another way to phrase it: The instant select...for update is executed, the records fetched from this are in the process of updating until the transaction ends.<br><br>";
 	
 	echo "Normal first level select...for update deadlock:<br>";
 	
@@ -248,28 +249,30 @@ if( empty( $_GET ) ) {
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 10, 9, 8, abort, then 7</a><br><br>";
 	
-	echo "Simple test of safeFetchForUpdate:<br>";
+	echo "Simple test of safeFetchForUpdate on record that does not exist:<br>";
 	
 	$settings1 = [
 		'position' => [
 			3 => 12,
 			5 => 'sleep'
 		],
-		'inner1' => 1
+		'inner1' => 1,
+		'safe'   => 1
 	];
 	
 	$settings2 = [
 		'position' => [
 			7 => 12
 		],
-		'inner2' => 1
+		'inner2' => 1,
+		'safe'   => 1
 	];
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12</a><br><br>";
 	
 	echo "Insert test of safeFetchForUpdate:<br>";
-	echo "Gotcha: The entire table is locked when the first thread inserts id 12, so the other thread is blocked at position 7 until the first thread finishes.<br>";
+	echo "Gotcha: The entire table blocks other inserts when the first thread inserts id 12, so the other thread is blocked at position 7 until the first thread finishes.<br>";
 	
 	$settings1 = [
 		'position' => [
@@ -292,6 +295,29 @@ if( empty( $_GET ) ) {
 	
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep, then perform safeFetchForUpdate on id of 15</a><br>";
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 15, then perform safeFetchForUpdate on id of 12</a><br><br>";
+	
+	echo "Simple test of safeFetchForUpdate on record that doesn't exist, then one that does:<br>";
+	echo "Note: While an insert does cause a table-wide block of other inserts for the duration of its transaction, it doesn't block the select-updates of other records in the other thread.<br>";
+	
+	$settings1 = [
+		'position' => [
+			3 => 12,
+			5 => 'sleep'
+		],
+		'inner1' => 1,
+		'safe'   => 1
+	];
+	
+	$settings2 = [
+		'position' => [
+			7 => 1
+		],
+		'inner2' => 1,
+		'safe'   => 1
+	];
+	
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
+	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 1</a><br><br>";
 	
 	echo "Deadlock test of safeFetchForUpdate:<br>";
 	
@@ -318,6 +344,8 @@ if( empty( $_GET ) ) {
 	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 5, then perform safeFetchForUpdate on id of 2</a><br><br>";
 }
 else {
+	echo "Start microtime: " . microtime( true ) . "<br>";
+	
 	include "../DatabaseHandler.php";
 	
 	$dbh = new DatabaseHandler();
