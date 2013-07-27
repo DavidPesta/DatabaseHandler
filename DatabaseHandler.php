@@ -179,14 +179,14 @@ class DatabaseHandler extends PDO
 		$this->loadTableSchemata();
 	}
 	
-	public function dropDatabase()
+	public function dropDatabase( $database = null )
 	{
-		if( $this->_database == "" ) return;
+		if( $database == null ) $database = $this->_database;
 		
-		$exists = $this->databaseExists( $this->_database );
+		if( $database == null ) return;
 		
-		if( $exists == 1 ) {
-			$this->execute( "drop database " . $this->_database );
+		if( $this->databaseExists( $database ) ) {
+			$this->execute( "drop database " . $database );
 		}
 	}
 	

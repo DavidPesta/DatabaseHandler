@@ -130,8 +130,7 @@ if( $_GET[ 'database' ] == "create" ) {
 
 if( $_GET[ 'database' ] == "destroy" ) {
 	if( $dbh->databaseExists( "dbhtest" ) == true ) {
-		$dbh->useDatabase( "dbhtest" );
-		$dbh->dropDatabase();
+		$dbh->dropDatabase( "dbhtest" );
 		echo "Database Destroyed<br><br>";
 	}
 	else {
@@ -141,8 +140,7 @@ if( $_GET[ 'database' ] == "destroy" ) {
 
 if( $_GET[ 'database' ] == "rebuild" ) {
 	if( $dbh->databaseExists( "dbhtest" ) == true ) {
-		$dbh->useDatabase( "dbhtest" );
-		$dbh->dropDatabase();
+		$dbh->dropDatabase( "dbhtest" );
 	}
 	createDatabase();
 	echo "Database Rebuilt<br><br>";
