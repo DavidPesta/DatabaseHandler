@@ -81,13 +81,8 @@ class Transactions
 	}
 }
 
-function setDatabase() {
+function createDatabase() {
 	global $dbh;
-	
-	if( $dbh->databaseExists( "dbhtest" ) == true ) {
-		$dbh->useDatabase( "dbhtest" );
-		return;
-	}
 	
 	$dbh->createDatabase( "dbhtest" );
 	
@@ -118,14 +113,60 @@ function setDatabase() {
 	//	( , '' ),
 }
 
+include "../DatabaseHandler.php";
+
+$dbh = new DatabaseHandler();
+
+if( $_GET[ 'database' ] == "create" ) {
+	if( $dbh->databaseExists( "dbhtest" ) == false ) {
+		createDatabase();
+		echo "Database Created<br><br>";
+	}
+	else {
+		$dbh->useDatabase( "dbhtest" );
+		echo "Database Already Exists<br><br>";
+	}
+}
+
+if( $_GET[ 'database' ] == "destroy" ) {
+	if( $dbh->databaseExists( "dbhtest" ) == true ) {
+		$dbh->useDatabase( "dbhtest" );
+		$dbh->dropDatabase();
+		echo "Database Destroyed<br><br>";
+	}
+	else {
+		echo "Database Already Doesn't Exist<br><br>";
+	}
+}
+
+if( $_GET[ 'database' ] == "rebuild" ) {
+	if( $dbh->databaseExists( "dbhtest" ) == true ) {
+		$dbh->useDatabase( "dbhtest" );
+		$dbh->dropDatabase();
+	}
+	createDatabase();
+	echo "Database Rebuilt<br><br>";
+}
+
+unset( $_GET[ 'database' ] );
+
 if( empty( $_GET ) ) {
 	
-	echo "To perform these deadlock tests, each test employs GET parameters in the links below. Each test has two links that should be run in two <i>different</i> browsers (Firefox and Chrome). For each test, run the top one in a browser first and then the second one in a separate browser quickly afterward.<br><br>";
+	echo "To perform these deadlock tests, each test employs GET parameters in the links below. Each test has two links that should be run in two <i>different</i> browsers (Firefox and Chrome). For each test, run the top one in a browser first and then the second one in a separate browser quickly afterward. In between each test, rebuild the database using the tools below:<br><br>";
+	
+	if( $dbh->databaseExists( "dbhtest" ) == true ) {
+		echo "Database exists: <a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( [ "database" => "rebuild" ] ) . "'>Rebuild Database</a> / <a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( [ "database" => "destroy" ] ) . "'>Destroy Database</a>";
+	}
+	else {
+		echo "Database does not exist: <a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( [ "database" => "create" ] ) . "'>Create Database</a>";
+	}
+	
+	echo "<br><br>";
 	
 	echo "Philosophical perspective about select...for update:<br>";
 	echo "- When a select...for update happens for a record, that record is 'being updated in progress' starting at that instant and completing upon commit<br>";
 	echo "- A normal select without for update should be able to retrieve that value because it doesn't matter to a select whether it gets data before or after an update; this happens all the time with normal selects that happen near normal updates; so the commit is when the update actually happens as far as a normal select is concerned<br>";
-	echo "- Regular updates to the same record does block, which makes sense because only one 'update in progress' to a record can happen at a time, so it must wait its turn; a regular update is no different than a select...for update in terms of it being an update that must wait until a current update in progress is finished<br>";
+	echo "- Regular updates to the same record does block, which makes sense because only one 'update in progress' to a record can happen at a time, so it must wait its turn; a regular update is no different than a select...for update in terms of it being an update that must wait until a current update in progress is finished for a given record<br>";
 	echo "- And finally, other select...for updates for that record also block for the same reason, only one 'update in progress' can happen at a time and must wait its turn<br>";
 	echo "Another way to phrase it: The instant select...for update is executed, the records fetched from this are in the process of updating until the transaction ends.<br><br>";
 	
@@ -146,8 +187,8 @@ if( empty( $_GET ) ) {
 		]
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 6</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 6, then fetch id 2</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 6</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 6, then fetch id 2</a><br><br>";
 	
 	echo "Nested second level select...for update deadlock where the deadlock happens between inside of the two separate inner transactions:<br>";
 	
@@ -170,8 +211,8 @@ if( empty( $_GET ) ) {
 		'inner2' => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 4, sleep, then fetch id 8</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 8, then fetch id 4</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 4, sleep, then fetch id 8</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 8, then fetch id 4</a><br><br>";
 	
 	echo "Nested second level select...for update deadlock where the deadlock happens when selecting from the outer, then an inner transaction:<br>";
 	
@@ -192,8 +233,8 @@ if( empty( $_GET ) ) {
 		'inner1' => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 4</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 4, then fetch id 2</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 2, sleep, then fetch id 4</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 4, then fetch id 2</a><br><br>";
 	
 	echo "Nested second level select...for update deadlock where the deadlock happens when selecting from an inner, then the outer transaction:<br>";
 	
@@ -214,8 +255,8 @@ if( empty( $_GET ) ) {
 		'inner1' => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 3, sleep, then fetch id 5</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 5, then fetch id 3</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 3, sleep, then fetch id 5</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Fetch id 5, then fetch id 3</a><br><br>";
 	
 	echo "Retry transaction thrown inside of inner transaction:<br>";
 	
@@ -231,7 +272,7 @@ if( empty( $_GET ) ) {
 		'forceDelete' => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 1, 2, 3, retry, then 5</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 1, 2, 3, retry, then 5</a><br><br>";
 	
 	echo "Abort transaction thrown inside of inner transaction:<br>";
 	
@@ -247,7 +288,7 @@ if( empty( $_GET ) ) {
 		'forceDelete' => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 10, 9, 8, abort, then 7</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Fetch id 10, 9, 8, abort, then 7</a><br><br>";
 	
 	echo "Simple test of safeFetchForUpdate on record that does not exist:<br>";
 	
@@ -268,8 +309,8 @@ if( empty( $_GET ) ) {
 		'safe'   => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12</a><br><br>";
 	
 	echo "Insert test of safeFetchForUpdate:<br>";
 	echo "Gotcha: The entire table blocks other inserts when the first thread inserts id 12, so the other thread is blocked at position 7 until the first thread finishes.<br>";
@@ -293,8 +334,8 @@ if( empty( $_GET ) ) {
 		'safe'   => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep, then perform safeFetchForUpdate on id of 15</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 15, then perform safeFetchForUpdate on id of 12</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep, then perform safeFetchForUpdate on id of 15</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 15, then perform safeFetchForUpdate on id of 12</a><br><br>";
 	
 	echo "Simple test of safeFetchForUpdate on record that doesn't exist, then one that does:<br>";
 	echo "Note: While an insert does cause a table-wide block of other inserts for the duration of its transaction, it doesn't block the select-updates of other records in the other thread.<br>";
@@ -316,8 +357,8 @@ if( empty( $_GET ) ) {
 		'safe'   => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 1</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 12, then sleep</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 1</a><br><br>";
 	
 	echo "Deadlock test of safeFetchForUpdate:<br>";
 	
@@ -340,24 +381,24 @@ if( empty( $_GET ) ) {
 		'safe'   => 1
 	];
 	
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 2, then sleep, then perform safeFetchForUpdate on id of 5</a><br>";
-	echo "<a href='" . $_SERVER[ 'REQUEST_URI' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 5, then perform safeFetchForUpdate on id of 2</a><br><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings1 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 2, then sleep, then perform safeFetchForUpdate on id of 5</a><br>";
+	echo "<a href='" . $_SERVER[ 'SCRIPT_NAME' ] . "?" . http_build_query( $settings2 ) . "' target='_blank'>Perform safeFetchForUpdate on id of 5, then perform safeFetchForUpdate on id of 2</a><br><br>";
 }
 else {
-	echo "Start microtime: " . microtime( true ) . "<br>";
-	
-	include "../DatabaseHandler.php";
-	
-	$dbh = new DatabaseHandler();
-	
-	setDatabase();
-	
-	echo "<br>" . Transactions::outerTransaction( $_GET );
-	
-	$results = $dbh->fetchGroup( "id", "name", "select * from test" );
-	
-	if( $results[ 11 ] != null || $_GET[ 'forceDelete' ] == 1 ) $dbh->dropDatabase();
-	else $dbh->execute( "insert into test ( id, name ) values ( 11,  'finished' ) on duplicate key update id = id" );
-	
-	echo "<pre>" . print_r( $results, 1 ) . "</pre>";
+	if( $dbh->databaseExists( "dbhtest" ) == true ) {
+		$dbh->useDatabase( "dbhtest" );
+		
+		$results = $dbh->fetchGroup( "id", "name", "select * from test" );
+		echo "<pre>Initial State: " . print_r( $results, 1 ) . "</pre>";
+		
+		echo "Start microtime: " . microtime( true ) . "<br>";
+		
+		echo "<br>" . Transactions::outerTransaction( $_GET );
+		
+		$results = $dbh->fetchGroup( "id", "name", "select * from test" );
+		echo "<pre>Final State: " . print_r( $results, 1 ) . "</pre>";
+	}
+	else {
+		echo "Database does not exist. Return to the parent page and create it.";
+	}
 }
