@@ -406,8 +406,8 @@ class DatabaseHandler extends PDO
 		// The following detects if an array exists as one of $array's elements:
 		// if( count( $records ) == count( $records, COUNT_RECURSIVE ) ) {
 		// Instead, we want a negative response if there exists a single non-array value inside $array
-		foreach( $array as $value ) {
-			if( is_null( $value ) ) continue;
+		foreach( $array as $key => $value ) {
+			if( $key === 0 && is_null( $value ) ) continue;
 			if( ! is_array( $value ) ) return false;
 		}
 		return true;
@@ -607,11 +607,19 @@ class DatabaseHandler extends PDO
 					$params = array();
 					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 						$value = current( $record );
-						if( $value === false ) break;
+						if( $value === false ) {
+							next( $record );
+							continue;
+						}
 						
 						if( $where != "" ) $where .= " and ";
-						$where .= "$field = :$field";
-						$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
+						if( $value === null ) {
+							$where .= "$field is null";
+						}
+						else {
+							$where .= "$field = :$field";
+							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
+						}
 						
 						next( $record );
 					}
@@ -625,10 +633,15 @@ class DatabaseHandler extends PDO
 					$where = "";
 					$params = array();
 					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
-						if( isset( $record[ $field ] ) ) {
+						if( array_key_exists( $field, $record ) ) {
 							if( $where != "" ) $where .= " and ";
-							$where .= "$field = :$field";
-							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+							if( $record[ $field ] === null ) {
+								$where .= "$field is null";
+							}
+							else {
+								$where .= "$field = :$field";
+								$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+							}
 						}
 					}
 				}

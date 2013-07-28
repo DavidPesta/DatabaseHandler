@@ -28,7 +28,7 @@ $dbh->bulkInsert( "soldiers",
 		array( 'Ray Spring',      'Private', 'First',    2,       4 ),
 		array( 'Mich Daniels',    'Colonel', 'Third',    29,      63 ),
 		array( 'Brian O\'Neil',   'General', 'First',    56,      102 ),
-		array( 'Yoshi Haruka',    'Colonel', 'Second',   35,    78 ),
+		array( 'Yoshi Haruka',    'Colonel', null,       35,      78 ),
 		array( 'Talmage Rock',    'Private', 'First',    4,       9 ),
 		array( 'Wesley Knight',   'Private', 'Second',   5,       7 ),
 		array( 'Gordon Richter',  'General', 'Third',    78,      156 ),
@@ -36,13 +36,20 @@ $dbh->bulkInsert( "soldiers",
 		array( 'John MacLeod',    'Private', 'Second',   4,       6 ),
 		array( 'Jack Nelson',     'Colonel', 'Third',    29,      63 ),
 		array( 'Henry Finkle',    'Private', 'Second',   3,       4 ),
-		array( 'Joseph Saddle',   'Colonel', 'Second',   30,    64 ),
+		array( 'Joseph Saddle',   'Colonel', 'Second',   30,      64 ),
 		array( 'Joshua Nice',     'Private', 'Third',    4,       7 ),
 		array( 'Mark Porch',      'Private', 'First',    3,       5 ),
 		array( 'Bob Bunsen',      'Colonel', 'First',    27,      55 ),
-		array( 'Harold Smith',    'Private', 'Third',    4,       7 )
+		array( 'Harold Smith',    'Private', 'Third',    null,    7 ),
+		array( 'Mike Sherman',    'Private', 'Second',   34,      54 ),
+		array( 'Bill Norman',     'Private', 'Third',    0,       5 ),
+		array( 'Chris Martin',    '',        'Second',   12,      18 ), // rank gets inserted into database as ""
+		array( 'Jack Morning',    'Private', '',         16,      32 ), // division gets inserted into database as null
+		array( 'Mack Mann',       'Private', 'Third',    76,      117 )
 	)
 );
+
+$dbh->execute( "insert into soldiers ( name, rank, division, power, health ) values ( 'Fred Frost', 'General', '', 58, 110 )" ); // division gets inserted into database as ""
 
 ?>
 <style>
@@ -96,6 +103,14 @@ $dbh->delete( "soldiers", [<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"power" => 4,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"health" => 7<br>
 ]);<br>
+<br>
+$dbh->delete( "soldiers", [ false, "Henry Finkle", false, false, 3 ] );<br>
+<br>
+$dbh->delete( "soldiers", [ false, false, false, null ] );<br>
+<br>
+$dbh->delete( "soldiers", [ "power" => null ] );<br>
+<br>
+$dbh->delete( "soldiers", [ "rank" => null ] );<br>
 
 <?php
 
@@ -125,6 +140,14 @@ $dbh->delete( "soldiers", [
 	"power" => 4,
 	"health" => 7
 ]);
+
+$dbh->delete( "soldiers", [ false, "Henry Finkle", false, false, 3 ] );
+
+$dbh->delete( "soldiers", [ false, false, false, null ] );
+
+$dbh->delete( "soldiers", [ "power" => null ] );
+
+$dbh->delete( "soldiers", [ "rank" => null ] );
 
 
 $soldiers = $dbh->fetch( "select * from soldiers" );
