@@ -27,6 +27,8 @@ The examples folder provides an exceptional set of self-explanatory documentatio
   * Use the following to convert a time string to a timestamp: strtotime( str_replace( array( "-", "." ), "/", $timeString ) );
   * strtotime() interprets hyphens as a MySQL datetime field; we want to treat "-", ".", and "/" the same when creating timestamp
 
+* When passing a record array to the delete method, if there are really large text fields in that array, it is a best practice to unset those fields from the array before passing it to the delete method so that it is not used as part of the search criteria for deleting the record
+
 
 ## To Do List
 
