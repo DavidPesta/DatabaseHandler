@@ -14,7 +14,7 @@ CREATE  TABLE IF NOT EXISTS `dbhtest`.`soldiers` (
   `rank` VARCHAR(32) NOT NULL ,
   `division` VARCHAR(32) NULL ,
   `power` INT UNSIGNED NULL ,
-  `health` INT UNSIGNED NOT NULL ,
+  `health` INT UNSIGNED NULL ,
   PRIMARY KEY (`soldierId`) )
 ENGINE = InnoDB;
 

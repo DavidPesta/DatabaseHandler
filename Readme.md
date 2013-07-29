@@ -4,7 +4,7 @@ DatabaseHandler
 A powerful library class that makes it easy to handle MySQL data.
 
 <b>Initial Release:</b> February 8, 2012<br>
-<b>Last Updated:</b> July 27, 2013
+<b>Last Updated:</b> July 29, 2013
 
 
 ## Documentation
@@ -28,6 +28,8 @@ The examples folder provides an exceptional set of self-explanatory documentatio
   * strtotime() interprets hyphens as a MySQL datetime field; we want to treat "-", ".", and "/" the same when creating timestamp
 
 * When passing a record array to the delete method, if there are really large text fields in that array, it is a best practice to unset those fields from the array before passing it to the delete method so that it is not used as part of the search criteria for deleting the record
+
+* For arrays passed to query methods whose values go into the where clause, null gets translated to 'is null', true gets translated to 'is not null', and false causes that field to get skipped (not appear in the where clause)
 
 
 ## To Do List

@@ -616,6 +616,9 @@ class DatabaseHandler extends PDO
 						if( $value === null ) {
 							$where .= "$field is null";
 						}
+						elseif( $value === true ) {
+							$where .= "$field is not null";
+						}
 						else {
 							$where .= "$field = :$field";
 							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
@@ -637,6 +640,9 @@ class DatabaseHandler extends PDO
 							if( $where != "" ) $where .= " and ";
 							if( $record[ $field ] === null ) {
 								$where .= "$field is null";
+							}
+							elseif( $record[ $field ] === true ) {
+								$where .= "$field is not null";
 							}
 							else {
 								$where .= "$field = :$field";

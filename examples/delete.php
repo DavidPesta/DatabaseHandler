@@ -45,7 +45,7 @@ $dbh->bulkInsert( "soldiers",
 		array( 'Bill Norman',     'Private', 'Third',    0,       5 ),
 		array( 'Chris Martin',    '',        'Second',   12,      18 ), // rank gets inserted into database as ""
 		array( 'Jack Morning',    'Private', '',         16,      32 ), // division gets inserted into database as null
-		array( 'Mack Mann',       'Private', 'Third',    76,      117 )
+		array( 'Mack Mann',       'Private', 'Third',    76,      null )
 	)
 );
 
@@ -149,6 +149,8 @@ $dbh->delete( "soldiers", [ "power" => null ] );
 
 $dbh->delete( "soldiers", [ "rank" => null ] );
 
+$dbh->delete( "soldiers", [ "health" => true ] );
+//$dbh->delete( "soldiers", [ false, false, false, false, false, true ] ); // This has the same result as immediately above
 
 $soldiers = $dbh->fetch( "select * from soldiers" );
 
