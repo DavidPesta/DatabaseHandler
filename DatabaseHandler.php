@@ -637,6 +637,7 @@ class DatabaseHandler extends PDO
 					$params = array();
 					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 						if( array_key_exists( $field, $record ) ) {
+							if( $record[ $field ] === false ) continue;
 							if( $where != "" ) $where .= " and ";
 							if( $record[ $field ] === null ) {
 								$where .= "$field is null";
