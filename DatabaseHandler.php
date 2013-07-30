@@ -428,7 +428,7 @@ class DatabaseHandler extends PDO
 			$singleRecord = false;
 		}
 		
-		$recordsWithAdjustedValues = array();
+		$recordsForDimensionShift = array();
 		
 		foreach( $records as $record ) {
 			$fields = array();
@@ -492,11 +492,11 @@ class DatabaseHandler extends PDO
 				$record[ $autoIncrementField ] = $this->lastInsertId();
 				$record = array_reverse( $record, true );
 			}
-			$recordsWithAdjustedValues[] = $record;
+			$recordsForDimensionShift[] = $record;
 		}
 		
-		if( $singleRecord == true ) return array_shift( $recordsWithAdjustedValues );
-		else return $recordsWithAdjustedValues;
+		if( $singleRecord == true ) return array_shift( $recordsForDimensionShift );
+		else return $recordsForDimensionShift;
 	}
 	
 	// DEPRECATED by additions made to the insert method, specifically the numeric indexed array based table inserts
