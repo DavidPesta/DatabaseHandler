@@ -62,7 +62,7 @@ class DatabaseHandler extends PDO
 		$this->_opt       = $settings[ 'opt' ];
 		
 		$this->connectToDatabase();
-		$this->loadTableSchemata();
+		$this->loadSchemata();
 	}
 	
 	private function connectToDatabase()
@@ -86,7 +86,7 @@ class DatabaseHandler extends PDO
 		return $this->_host . ":" . $this->_port . ":" . $this->_database;
 	}
 	
-	public function loadTableSchemata( $force = null )
+	public function loadSchemata( $force = null )
 	{
 		if( $this->_database == "" ) {
 			$this->_schemata = null;
@@ -176,7 +176,7 @@ class DatabaseHandler extends PDO
 	{
 		$this->_database = $database;
 		$this->execute( "use " . $this->_database );
-		if( $loadSchemata ) $this->loadTableSchemata();
+		if( $loadSchemata ) $this->loadSchemata();
 	}
 	
 	public function dropDatabase( $database = null )
@@ -193,7 +193,7 @@ class DatabaseHandler extends PDO
 	public function createTable( $sql )
 	{
 		$this->execute( $sql );
-		$this->loadTableSchemata( "force" );
+		$this->loadSchemata( "force" );
 	}
 	
 	public function createTables( $script )
@@ -222,7 +222,7 @@ class DatabaseHandler extends PDO
 			$this->execute( $createTable );
 		}
 		
-		$this->loadTableSchemata( "force" );
+		$this->loadSchemata( "force" );
 	}
 	
 	public function fetchCreateTable( $table )
