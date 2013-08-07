@@ -164,7 +164,7 @@ class DatabaseHandler extends PDO
 		$stmt = $this->prepare( "create database if not exists $database" );
 		$stmt->execute();
 		
-		if( $autoConnect ) $this->useDatabase( $database );
+		if( $autoConnect ) $this->useDatabase( $database, false );
 	}
 	
 	public function databaseExists( $databaseName )
@@ -172,11 +172,11 @@ class DatabaseHandler extends PDO
 		return $this->fetchValue( "SELECT IF( '" . $databaseName . "' IN( SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ), 1, 0 ) AS found" );
 	}
 	
-	public function useDatabase( $database )
+	public function useDatabase( $database, $loadSchemata = true )
 	{
 		$this->_database = $database;
 		$this->execute( "use " . $this->_database );
-		$this->loadTableSchemata();
+		if( $loadSchemata ) $this->loadTableSchemata();
 	}
 	
 	public function dropDatabase( $database = null )
