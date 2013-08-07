@@ -430,10 +430,16 @@ class DatabaseHandler extends PDO
 		
 		$recordsForDimensionShift = array();
 		
+		$fields = array();
+		foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+			$fields[] = $field;
+		}
+		
+		$params = array();
+		$values = "";
+		
+		$recordNum = 0;
 		foreach( $records as $record ) {
-			$fields = array();
-			$params = array();
-			
 			$autoIncrementField = null;
 			
 			// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
@@ -443,14 +449,14 @@ class DatabaseHandler extends PDO
 				$newRecord = array();
 				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 					$newRecord[ $field ] = current( $record );
-
-					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
-					if( ( ! isset( $newRecord[ $field ] ) || $newRecord[ $field ] === false ) && $fieldSchema[ 'Default' ] != null ) $newRecord[ $field ] = $fieldSchema[ 'Default' ];
-
-					$fields[] = $field;
-					$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $newRecord[ $field ] );
-
-					if( $fieldSchema[ 'Extra' ] == "auto_increment" && ( $newRecord[ $field ] === false || is_null( $newRecord[ $field ] ) ) ) $autoIncrementField = $field;
+					
+					$fieldIsNull = ( ! array_key_exists( $field, $newRecord ) || is_null( $newRecord[ $field ] ) || $newRecord[ $field ] === false ) ? true : false;
+					
+					if( $fieldSchema[ 'Default' ] != null && $fieldIsNull ) $newRecord[ $field ] = $fieldSchema[ 'Default' ];
+					
+					$params[ ":" . $field . "_" . $recordNum ] = self::formatValueForDatabase( $fieldSchema, $newRecord[ $field ] );
+					
+					if( $fieldSchema[ 'Extra' ] == "auto_increment" && $fieldIsNull ) $autoIncrementField = $field;
 					
 					next( $record );
 				}
@@ -458,34 +464,23 @@ class DatabaseHandler extends PDO
 			}
 			else {
 				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
-					// If it is false, then set it to the default; but if it is set and it is null, then set it to null (nope, if null, it looks like MySQL sets it to the default anyway; that's fine)
-					if( ( ! isset( $record[ $field ] ) || $record[ $field ] === false ) && $fieldSchema[ 'Default' ] != null ) $record[ $field ] = $fieldSchema[ 'Default' ];
-
-					if( isset( $record[ $field ] ) ) {
-						$fields[] = $field;
-						$params[ ":" . $field ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+					$fieldIsNull = ( ! array_key_exists( $field, $record ) || is_null( $record[ $field ] ) || $record[ $field ] === false ) ? true : false;
+					
+					if( $fieldSchema[ 'Default' ] != null && $fieldIsNull ) $record[ $field ] = $fieldSchema[ 'Default' ];
+					
+					if( array_key_exists( $field, $record ) ) {
+						$params[ ":" . $field . "_" . $recordNum ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
+					}
+					else {
+						$params[ ":" . $field . "_" . $recordNum ] = null;
 					}
 					
-					if(
-						$fieldSchema[ 'Extra' ] == "auto_increment" &&
-						(
-							! isset( $record[ $field ] ) ||
-							(
-								isset( $record[ $field ] ) &&
-								(
-									is_null( $record[ $field ] ) || $record[ $field ] === false
-								)
-							)
-						)
-					) {
-						$autoIncrementField = $field;
-					}
+					if( $fieldSchema[ 'Extra' ] == "auto_increment" && $fieldIsNull ) $autoIncrementField = $field;
 				}
 			}
 			
-			// TODO: Experiment with pulling the following insert out of the foreach and having this work as a multi-insert statement like bulkInsert; then bulkInsert can be removed entirely
-			$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values ( :" . implode( ", :", $fields ) . " )";
-			$this->execute( $sql, $params );
+			if($values != "") $values .= ",";
+			$values .= "( :" . implode( "_" . $recordNum . ", :", $fields ) . "_" . $recordNum . " )";
 			
 			if( $autoIncrementField != null ) {
 				$record = array_reverse( $record, true );
@@ -493,49 +488,16 @@ class DatabaseHandler extends PDO
 				$record = array_reverse( $record, true );
 			}
 			$recordsForDimensionShift[] = $record;
-		}
-		
-		if( $singleRecord == true ) return array_shift( $recordsForDimensionShift );
-		else return $recordsForDimensionShift;
-	}
-	
-	// DEPRECATED by additions made to the insert method, specifically the numeric indexed array based table inserts
-	public function bulkInsert()
-	{
-		$args = func_get_args();
-		
-		$table = $args[ 0 ];
-		$fields = $args[ 1 ];
-		$records = $args[ 2 ];
-		
-		$values = array();
-		$params = array();
-		
-		$recordNum = 0;
-		foreach( $records as $record ) {
-			$fieldBindings = array();
-			
-			$fieldNum = 0;
-			foreach( $fields as $field ) {
-				$fieldBinding = $field . "_" . $recordNum;
-				$fieldBindings[] = $fieldBinding;
-				if( is_null( $record[ $fieldNum ] ) ) {
-					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_schemata[ $table ][ $field ], $this->_schemata[ $table ][ $field ][ 'Default' ] );
-				}
-				else {
-					$params[ ":" . $fieldBinding ] = self::formatValueForDatabase( $this->_schemata[ $table ][ $field ], $record[ $fieldNum ] );
-				}
-				$fieldNum++;
-			}
-			
-			$values[] = "( :" . implode( ", :", $fieldBindings ) . " )";
 			
 			$recordNum++;
 		}
 		
-		$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values " . implode( ", ", $values );
+		$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values " . $values;
 		
 		$this->execute( $sql, $params );
+		
+		if( $singleRecord == true ) return array_shift( $recordsForDimensionShift );
+		else return $recordsForDimensionShift;
 	}
 	
 	public function update()

@@ -17,58 +17,27 @@ $dbh->createDatabase( "dbhtest" );
 
 $dbh->createTables( file_get_contents( "ddls/insert.sql" ) );
 
-$dbh->bulkInsert( "soldiers",
-	array(
-		       "name",            "rank",    "division", "power", "health"
-	),
-	array(
-		array( 'Brian Holde',     'Private', 'Third',    5,       8 ),
-		array( 'Jordan Wild',     'Private', 'First',    3,       6 ),
-		array( 'Mike Barge',      'General', 'Second',   43,      96 ),
-		array( 'Ray Spring',      'Private', 'First',    2,       4 ),
-		array( 'Mich Daniels',    'Colonel', 'Third',    29,      63 ),
-		array( 'Brian O\'Neil',   'General', 'First',    56,      102 ),
-		array( 'Yoshi Haruka',    'Colonel', 'Second',   null,    78 ),
-		array( 'Talmage Rock',    'Private', 'First',    4,       9 ),
-		array( 'Wesley Knight',   'Private', 'Second',   5,       7 ),
-		array( 'Gordon Richter',  'General', 'Third',    78,      156 ),
-		array( 'Thomas McKenzie', 'Colonel', null,    31,      62 ),
-		array( 'John MacLeod',    'Private', 'Second',   4,       6 ),
-		array( 'Jack Nelson',     'Colonel', 'Third',    29,      63 ),
-		array( 'Henry Finkle',    'Private', 'Second',   3,       4 ),
-		array( 'Joseph Saddle',   null, 'Second',   null,    64 ),
-		array( 'Joshua Nice',     'Private', 'Third',    4,       7 ),
-		array( 'Mark Porch',      'Private', 'First',    3,       null ),
-		array( 'Bob Bunsen',      'Colonel', 'First',    27,      55 ),
-		array( 'Harold Smith',    'Private', 'Third',    4,       7 )
-	)
-);
-
-/*
-$dbh->execute( "
-	insert into `soldiers` ( `name`, `rank`, `division`, `power`, `health` ) values
-	( 'Brian Holde', 'Private', 'Third', 5, 8 ),
-	( 'Jordan Wild', 'Private', 'First', 3, 6 ),
-	( 'Mike Barge', 'General', 'Second', 43, 96 ),
-	( 'Ray Spring', 'Private', 'First', 2, 4 ),
-	( 'Mich Daniels', 'Colonel', 'Third', 29, 63 ),
-	( 'Brian O\'Neil', 'General', 'First', 56, 102 ),
-	( 'Yoshi Haruka', 'Colonel', 'Second', 35, 78 ),
-	( 'Talmage Rock', 'Private', 'First', 4, 9 ),
-	( 'Wesley Knight', 'Private', 'Second', 5, 7 ),
-	( 'Gordon Richter', 'General', 'Third', 78, 156 ),
-	( 'Thomas McKenzie', 'Colonel', 'First', 31, 62 ),
-	( 'John MacLeod', 'Private', 'Second', 4, 6 ),
-	( 'Jack Nelson', 'Colonel', 'Third', 29, 63 ),
-	( 'Henry Finkle', 'Private', 'Second', 3, 4 ),
-	( 'Joseph Saddle', 'Colonel', 'Second', 30, 64 ),
-	( 'Joshua Nice', 'Private', 'Third', 4, 7 ),
-	( 'Mark Porch', 'Private', 'First', 3, 5 ),
-	( 'Bob Bunsen', 'Colonel', 'First', 27, 55 ),
-	( 'Harold Smith', 'Private', 'Third', 4, 7 );
-" );
-*/
-//	( '', '', '', ,  ),
+$dbh->insert( "soldiers", [
+	[ null, 'Brian Holde',     'Private', 'Third',  5,    8    ],
+	[ null, 'Jordan Wild',     'Private', 'First',  3,    6    ],
+	[ null, 'Mike Barge',      'General', 'Second', 43,   96   ],
+	[ null, 'Ray Spring',      'Private', 'First',  2,    4    ],
+	[ null, 'Mich Daniels',    'Colonel', 'Third',  29,   63   ],
+	[ null, 'Brian O\'Neil',   'General', 'First',  56,   102  ],
+	[ null, 'Yoshi Haruka',    'Colonel', 'Second', null, 78   ],
+	[ null, 'Talmage Rock',    'Private', 'First',  4,    9    ],
+	[ null, 'Wesley Knight',   'Private', 'Second', 5,    7    ],
+	[ null, 'Gordon Richter',  'General', 'Third',  78,   156  ],
+	[ null, 'Thomas McKenzie', 'Colonel', null,     31,   62   ],
+	[ null, 'John MacLeod',    'Private', 'Second', 4,    6    ],
+	[ null, 'Jack Nelson',     'Colonel', 'Third',  29,   63   ],
+	[ null, 'Henry Finkle',    'Private', 'Second', 3,    4    ],
+	[ null, 'Joseph Saddle',   null,      'Second', null, 64   ],
+	[ null, 'Joshua Nice',     'Private', 'Third',  4,    7    ],
+	[ null, 'Mark Porch',      'Private', 'First',  3,    null ],
+	[ null, 'Bob Bunsen',      'Colonel', 'First',  27,   55   ],
+	[ null, 'Harold Smith',    'Private', 'Third',  4,    7    ]
+]);
 
 ?>
 <style>

@@ -17,37 +17,32 @@ $dbh->createDatabase( "dbhtest" );
 
 $dbh->createTables( file_get_contents( "ddls/delete.sql" ) );
 
-$dbh->bulkInsert( "soldiers",
-	array(
-		       "name",            "rank",    "division", "power", "health"
-	),
-	array(
-		array( 'Brian Holde',     'Private', 'Third',    5,       8 ),
-		array( 'Jordan Wild',     'Private', 'First',    3,       6 ),
-		array( 'Mike Barge',      'General', 'Second',   43,      96 ),
-		array( 'Ray Spring',      'Private', 'First',    2,       4 ),
-		array( 'Mich Daniels',    'Colonel', 'Third',    29,      63 ),
-		array( 'Brian O\'Neil',   'General', 'First',    56,      102 ),
-		array( 'Yoshi Haruka',    'Colonel', null,       35,      78 ),
-		array( 'Talmage Rock',    'Private', 'First',    4,       9 ),
-		array( 'Wesley Knight',   'Private', 'Second',   5,       7 ),
-		array( 'Gordon Richter',  'General', 'Third',    78,      156 ),
-		array( 'Thomas McKenzie', 'Colonel', 'First',    31,      62 ),
-		array( 'John MacLeod',    'Private', 'Second',   4,       6 ),
-		array( 'Jack Nelson',     'Colonel', 'Third',    29,      63 ),
-		array( 'Henry Finkle',    'Private', 'Second',   3,       4 ),
-		array( 'Joseph Saddle',   'Colonel', 'Second',   30,      64 ),
-		array( 'Joshua Nice',     'Private', 'Third',    4,       7 ),
-		array( 'Mark Porch',      'Private', 'First',    3,       5 ),
-		array( 'Bob Bunsen',      'Colonel', 'First',    27,      55 ),
-		array( 'Harold Smith',    'Private', 'Third',    null,    7 ),
-		array( 'Mike Sherman',    'Private', 'Second',   34,      54 ),
-		array( 'Bill Norman',     'Private', 'Third',    0,       5 ),
-		array( 'Chris Martin',    '',        'Second',   12,      18 ), // rank gets inserted into database as ""
-		array( 'Jack Morning',    'Private', '',         16,      32 ), // division gets inserted into database as null
-		array( 'Mack Mann',       'Private', 'Third',    76,      null )
-	)
-);
+$dbh->insert( "soldiers", [
+	[ null, 'Brian Holde',     'Private', 'Third',  5,    8    ],
+	[ null, 'Jordan Wild',     'Private', 'First',  3,    6    ],
+	[ null, 'Mike Barge',      'General', 'Second', 43,   96   ],
+	[ null, 'Ray Spring',      'Private', 'First',  2,    4    ],
+	[ null, 'Mich Daniels',    'Colonel', 'Third',  29,   63   ],
+	[ null, 'Brian O\'Neil',   'General', 'First',  56,   102  ],
+	[ null, 'Yoshi Haruka',    'Colonel', null,     35,   78   ],
+	[ null, 'Talmage Rock',    'Private', 'First',  4,    9    ],
+	[ null, 'Wesley Knight',   'Private', 'Second', 5,    7    ],
+	[ null, 'Gordon Richter',  'General', 'Third',  78,   156  ],
+	[ null, 'Thomas McKenzie', 'Colonel', 'First',  31,   62   ],
+	[ null, 'John MacLeod',    'Private', 'Second', 4,    6    ],
+	[ null, 'Jack Nelson',     'Colonel', 'Third',  29,   63   ],
+	[ null, 'Henry Finkle',    'Private', 'Second', 3,    4    ],
+	[ null, 'Joseph Saddle',   'Colonel', 'Second', 30,   64   ],
+	[ null, 'Joshua Nice',     'Private', 'Third',  4,    7    ],
+	[ null, 'Mark Porch',      'Private', 'First',  3,    5    ],
+	[ null, 'Bob Bunsen',      'Colonel', 'First',  27,   55   ],
+	[ null, 'Harold Smith',    'Private', 'Third',  null, 7    ],
+	[ null, 'Mike Sherman',    'Private', 'Second', 34,   54   ],
+	[ null, 'Bill Norman',     'Private', 'Third',  0,    5    ],
+	[ null, 'Chris Martin',    '',        'Second', 12,   18   ], // rank gets inserted into database as ""
+	[ null, 'Jack Morning',    'Private', '',       16,   32   ], // division gets inserted into database as null
+	[ null, 'Mack Mann',       'Private', 'Third',  76,   null ]
+]);
 
 $dbh->execute( "insert into soldiers ( name, rank, division, power, health ) values ( 'Fred Frost', 'General', '', 58, 110 )" ); // division gets inserted into database as ""
 
