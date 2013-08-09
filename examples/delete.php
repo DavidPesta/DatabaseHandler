@@ -15,7 +15,17 @@ $dbh = new DatabaseHandler();
 
 $dbh->createDatabase( "dbhtest" );
 
-$dbh->createTables( file_get_contents( "ddls/delete.sql" ) );
+$dbh->createTable("
+	CREATE  TABLE IF NOT EXISTS `dbhtest`.`soldiers` (
+		`soldierId` INT UNSIGNED NOT NULL AUTO_INCREMENT ,
+		`name` VARCHAR(255) NOT NULL ,
+		`rank` VARCHAR(32) NOT NULL ,
+		`division` VARCHAR(32) NULL ,
+		`power` INT UNSIGNED NULL ,
+		`health` INT UNSIGNED NULL ,
+		PRIMARY KEY (`soldierId`)
+	) ENGINE = InnoDB
+");
 
 $dbh->insert( "soldiers", [
 	[ null, 'Brian Holde',     'Private', 'Third',  5,    8    ],
