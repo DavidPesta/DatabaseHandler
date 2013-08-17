@@ -278,9 +278,74 @@ class DatabaseHandler extends PDO
 		$this->execute( "ALTER TABLE $tableName AUTO_INCREMENT = 1" );
 	}
 	
+	public function prepareFetchArgs( $args, & $sql, & $params )
+	{
+		$num = count( $args );
+		
+		if( $num == 0 ) throw new Exception( "At least one argument is required to determine a query to be run." );
+		
+		// If a table name is passed, that is a single token without spaces, so if there IS a space in the first arg, we assume it is SQL and pass it on to prepareArgs
+		if( strpos( $args[ 0 ], " " ) !== false ) {
+			self::prepareArgs( $args, $sql, $params );
+		}
+		else {
+			$table = $args[ 0 ];
+			
+			if( empty( $args[ 1 ] ) ) {
+				$selectFields = "*";
+			}
+			else {
+				if( is_array( $args[ 1 ] ) ) $selectFields = implode( ", ", $args[ 1 ] );
+				else $selectFields = $args[ 1 ];
+			}
+			
+			if( empty( $args[ 2 ] ) ) {
+				$whereSql = "";
+			}
+			else {
+				$whereValues = $args[ 2 ];
+				
+				$whereSql = "";
+				
+				// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
+				for( reset( $whereValues ); is_int( key( $whereValues ) ); next( $whereValues ) );
+				if( is_null( key( $whereValues ) ) ) {
+					reset( $whereValues );
+					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+						$whereValue = current( $whereValues );
+						
+						if( $whereValue !== null && $whereValue !== false ) {
+							if( $whereSql != "" ) $whereSql .= " and ";
+							$whereSql .= "$field = :$field";
+							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValue );
+						}
+						
+						next( $whereValues );
+					}
+				}
+				else {
+					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+						$fieldIsNull = ( ! array_key_exists( $field, $whereValues ) || is_null( $whereValues[ $field ] ) || $whereValues[ $field ] === false ) ? true : false;
+						
+						if( ! $fieldIsNull ) {
+							if( $whereSql != "" ) $whereSql .= " and ";
+							$whereSql .= "$field = :$field";
+							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValues[ $field ] );
+						}
+					}
+				}
+				
+				$whereSql = " where $whereSql";
+			}
+			
+			$sql = "select " . $selectFields . " from " . $table . $whereSql;
+		}
+	}
+	
 	public function fetchOne()
 	{
-		self::prepareArgs( func_get_args(), $sql, $params );
+		self::prepareFetchArgs( func_get_args(), $sql, $params );
+		
 		$stmt = $this->execute( $sql, $params );
 		
 		return $stmt->fetch( PDO::FETCH_ASSOC );
@@ -288,7 +353,7 @@ class DatabaseHandler extends PDO
 	
 	public function fetch()
 	{
-		self::prepareArgs( func_get_args(), $sql, $params );
+		self::prepareFetchArgs( func_get_args(), $sql, $params );
 		
 		$stmt = $this->execute( $sql, $params );
 		
@@ -302,7 +367,7 @@ class DatabaseHandler extends PDO
 	
 	public function fetchValue()
 	{
-		self::prepareArgs( func_get_args(), $sql, $params );
+		self::prepareFetchArgs( func_get_args(), $sql, $params );
 		
 		$stmt = $this->execute( $sql, $params );
 		$result = $stmt->fetch( PDO::FETCH_NUM );
@@ -381,7 +446,7 @@ class DatabaseHandler extends PDO
 		$keyFields = array_shift( $args );
 		$valueFields = array_shift( $args );
 		
-		self::prepareArgs( $args, $sql, $params );
+		self::prepareFetchArgs( $args, $sql, $params );
 		$stmt = $this->execute( $sql, $params );
 		
 		$arrays = array();
