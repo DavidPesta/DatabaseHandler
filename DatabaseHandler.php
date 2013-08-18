@@ -314,10 +314,18 @@ class DatabaseHandler extends PDO
 					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
 						$whereValue = current( $whereValues );
 						
-						if( $whereValue !== null && $whereValue !== false ) {
+						if( $whereValue !== false ) {
 							if( $whereSql != "" ) $whereSql .= " and ";
-							$whereSql .= "$field = :$field";
-							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValue );
+							if( $whereValue === null ) {
+								$whereSql .= "$field is null";
+							}
+							elseif( $whereValue === true ) {
+								$whereSql .= "$field is not null";
+							}
+							else {
+								$whereSql .= "$field = :$field";
+								$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValue );
+							}
 						}
 						
 						next( $whereValues );
@@ -325,12 +333,20 @@ class DatabaseHandler extends PDO
 				}
 				else {
 					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
-						$fieldIsNull = ( ! array_key_exists( $field, $whereValues ) || is_null( $whereValues[ $field ] ) || $whereValues[ $field ] === false ) ? true : false;
+						$fieldExists = ( array_key_exists( $field, $whereValues ) && $whereValues[ $field ] !== false ) ? true : false;
 						
-						if( ! $fieldIsNull ) {
+						if( $fieldExists ) {
 							if( $whereSql != "" ) $whereSql .= " and ";
-							$whereSql .= "$field = :$field";
-							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValues[ $field ] );
+							if( $whereValues[ $field ] === null ) {
+								$whereSql .= "$field is null";
+							}
+							elseif( $whereValues[ $field ] === true ) {
+								$whereSql .= "$field is not null";
+							}
+							else {
+								$whereSql .= "$field = :$field";
+								$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $whereValues[ $field ] );
+							}
 						}
 					}
 				}

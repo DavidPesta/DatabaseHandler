@@ -20,7 +20,7 @@ $dbh->createTable("
 		`soldierId` INT UNSIGNED NOT NULL AUTO_INCREMENT ,
 		`name` VARCHAR(255) NOT NULL ,
 		`rank` VARCHAR(32) NOT NULL ,
-		`division` VARCHAR(32) NOT NULL ,
+		`division` VARCHAR(32) ,
 		`power` INT UNSIGNED NOT NULL ,
 		`health` INT UNSIGNED NOT NULL ,
 		PRIMARY KEY (`soldierId`)
@@ -47,7 +47,8 @@ $dbh->execute( "
 	( 'Joshua Nice', 'Private', 'Third', 4, 7 ),
 	( 'Mark Porch', 'Private', 'First', 3, 5 ),
 	( 'Bob Bunsen', 'Colonel', 'First', 27, 55 ),
-	( 'Harold Smith', 'Private', 'Third', 4, 7 );
+	( 'Harold Smith', 'Private', 'Third', 4, 7 ),
+	( 'Reginald Vancouver', 'Supreme Commander', null, 4536, 7893 );
 " );
 //	( '', '', '', ,  ),
 
@@ -279,9 +280,37 @@ echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
 
 
 echo "<br>";
-?><h2 id="fetchValue">$dbh->fetch( "soldiers", "*", [ null, null, null, "Second" ] );</h2>
+?><h2 id="fetchValue">$dbh->fetch( "soldiers", "*", [ false, false, false, "Second" ] );</h2>
 Fetch everything for soldiers that exist in the Second division.<?php
-$soldiers = $dbh->fetch( "soldiers", "*", [ null, null, null, "Second" ] );
+$soldiers = $dbh->fetch( "soldiers", "*", [ false, false, false, "Second" ] );
+echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
+
+
+echo "<br>";
+?><h2 id="fetchValue">$dbh->fetch( "soldiers", "*", [ false, false, false, null ] );</h2>
+Fetch everything for soldiers that do not exist in a division.<?php
+$soldiers = $dbh->fetch( "soldiers", "*", [ false, false, false, null ] );
+echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
+
+
+echo "<br>";
+?><h2 id="fetchValue">$dbh->fetch( "soldiers", [], [ false, false, false, true ] );</h2>
+Fetch everything for soldiers that do exist in a division.<?php
+$soldiers = $dbh->fetch( "soldiers", "*", [ false, false, false, true ] );
+echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
+
+
+echo "<br>";
+?><h2 id="fetchValue">$dbh->fetch( "soldiers", null, [ "division" => null ] );</h2>
+Fetch everything for soldiers that do not exist in a division.<?php
+$soldiers = $dbh->fetch( "soldiers", null, [ "division" => null ] );
+echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
+
+
+echo "<br>";
+?><h2 id="fetchValue">$dbh->fetch( "soldiers", "*", [ "division" => true ] );</h2>
+Fetch everything for soldiers that do exist in a division.<?php
+$soldiers = $dbh->fetch( "soldiers", "*", [ "division" => true ] );
 echo "<pre>" . print_r( $soldiers, 1 ) . "</pre>";
 
 
