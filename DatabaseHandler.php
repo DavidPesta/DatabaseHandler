@@ -519,10 +519,10 @@ class DatabaseHandler extends PDO
 		$params = array();
 		$values = "";
 		
+		$autoIncrementField = null;
+		
 		$recordNum = 0;
 		foreach( $records as $record ) {
-			$autoIncrementField = null;
-			
 			// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
 			for( reset( $record ); is_int( key( $record ) ); next( $record ) );
 			if( is_null( key( $record ) ) ) {
@@ -563,11 +563,6 @@ class DatabaseHandler extends PDO
 			if($values != "") $values .= ",";
 			$values .= "( :" . implode( "_" . $recordNum . ", :", $fields ) . "_" . $recordNum . " )";
 			
-			if( $autoIncrementField != null ) {
-				$record = array_reverse( $record, true );
-				$record[ $autoIncrementField ] = $this->lastInsertId();
-				$record = array_reverse( $record, true );
-			}
 			$recordsForDimensionShift[] = $record;
 			
 			$recordNum++;
@@ -576,6 +571,16 @@ class DatabaseHandler extends PDO
 		$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values " . $values;
 		
 		$this->execute( $sql, $params );
+		
+		if( $autoIncrementField != null ) {
+			$lastInsertId = $this->lastInsertId();
+			
+			$numRecords = count( $recordsForDimensionShift );
+			for( $i = 0; $i < $numRecords; $i++ ) {
+				$recordsForDimensionShift[ $i ][ $autoIncrementField ] = $lastInsertId;
+				$lastInsertId++;
+			}
+		}
 		
 		if( $singleRecord == true ) return array_shift( $recordsForDimensionShift );
 		else return $recordsForDimensionShift;
