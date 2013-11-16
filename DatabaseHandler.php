@@ -53,7 +53,7 @@ class DatabaseHandler extends PDO
 		
 		$this->_cache     = $settings[ 'cache' ];
 		$this->_cachePath = $settings[ 'cachePath' ];
-		$this->_cacheFile = $this->_cachePath == "" ? "DatabaseHandler.cache" : $this->_cachePath . DIRECTORY_SEPARATOR . "DatabaseHandler.cache";
+		$this->_cacheFile = $this->_cachePath == "" ? __DIR__ . DIRECTORY_SEPARATOR . "DatabaseHandler.cache" : $this->_cachePath . DIRECTORY_SEPARATOR . "DatabaseHandler.cache";
 		$this->_host      = $settings[ 'host' ];
 		$this->_port      = $settings[ 'port' ];
 		$this->_database  = $settings[ 'database' ];
