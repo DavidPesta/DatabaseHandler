@@ -245,7 +245,7 @@ class DatabaseHandler extends PDO
 		return $createSchemata;
 	}
 	
-	protected static function prepareArgs( $args, & $firstArg, & $remainingArgs )
+	public static function prepareArgs( $args, & $firstArg, & $remainingArgs )
 	{
 		$num = count( $args );
 		

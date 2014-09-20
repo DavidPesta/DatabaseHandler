@@ -4,7 +4,7 @@ DatabaseHandler
 A powerful library class that makes it easy to handle MySQL data.
 
 <b>Initial Release:</b> February 8, 2012<br>
-<b>Last Updated:</b> August 17, 2013
+<b>Last Updated:</b> September 20, 2014
 
 
 ## Documentation
@@ -65,7 +65,7 @@ The examples folder provides an exceptional set of self-explanatory documentatio
 
 The MIT License
 
-Copyright (c) 2012-2013 David Pesta
+Copyright (c) 2012-2014 David Pesta
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
