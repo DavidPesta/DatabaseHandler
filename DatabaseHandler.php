@@ -112,6 +112,7 @@ class DatabaseHandler extends PDO
 
 		if( $this->_schemata === false || $this->_primaryKeys === false || $force == "force" ) {
 			$this->_schemata = array();
+			$this->_primaryKeys = array();
 			
 			$stmtTables = $this->execute( "show tables" );
 			while( $tableRecord = $stmtTables->fetch( PDO::FETCH_NUM ) ) {
