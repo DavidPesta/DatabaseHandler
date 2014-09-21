@@ -61,8 +61,10 @@ class DatabaseHandler extends PDO
 		$this->_pass      = $settings[ 'pass' ];
 		$this->_opt       = $settings[ 'opt' ];
 		
+		$this->_schemata = array();
+		$this->_primaryKeys = array();
+		
 		$this->connectToDatabase();
-		$this->loadSchemata();
 	}
 	
 	private function connectToDatabase()
@@ -86,47 +88,41 @@ class DatabaseHandler extends PDO
 		return $this->_host . ":" . $this->_port . ":" . $this->_database;
 	}
 	
-	public function loadSchemata( $force = null )
+	public function loadSchema( $tableName, $force = null )
 	{
+		if( $this->_schemata[ $tableName ] != null && $this->_primaryKeys[ $tableName ] != null && $force == null ) return;
+		
 		if( $this->_database == "" ) {
-			$this->_schemata = null;
+			$this->_schemata = array();
+			$this->_primaryKeys = array();
 			return;
 		}
-		
-		$this->_schemata = false;
-		$this->_primaryKeys = false;
 		
 		if( $this->_cache ) {
 			if( is_file( $this->_cacheFile ) ) {
 				$cache = unserialize( file_get_contents( $this->_cacheFile ) );
 				
 				if( isset( $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] ) ) {
-					$this->_schemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
+					$partialSchemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
+					$this->_schemata[ $tableName ] = $partialSchemata[ $tableName ];
 				}
 				
 				if( isset( $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] ) ) {
-					$this->_primaryKeys = $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ];
+					 $partialPrimaryKeys = $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ];
+					 $this->_primaryKeys[ $tableName ] = $partialPrimaryKeys[ $tableName ];
 				}
 			}
 		}
-
-		if( $this->_schemata === false || $this->_primaryKeys === false || $force == "force" ) {
-			$this->_schemata = array();
-			$this->_primaryKeys = array();
+		
+		if( $this->_schemata[ $tableName ] == null || $this->_primaryKeys[ $tableName ] == null || $force == "force" ) {
+			$this->_schemata[ $tableName ] = array();
+			$this->_primaryKeys[ $tableName ] = array();
 			
-			$stmtTables = $this->execute( "show tables" );
-			while( $tableRecord = $stmtTables->fetch( PDO::FETCH_NUM ) ) {
-				$tableName = $tableRecord[ 0 ];
-				
-				$this->_schemata[ $tableName ] = array();
-				$this->_primaryKeys[ $tableName ] = array();
-				
-				$stmtSchema = $this->execute( "describe " . $tableName );
-				while( $schemaRecord = $stmtSchema->fetch( PDO::FETCH_ASSOC ) ) {
-					$fieldName = $schemaRecord[ 'Field' ];
-					$this->_schemata[ $tableName ][ $fieldName ] = $schemaRecord;
-					if( $schemaRecord[ 'Key' ] == "PRI" ) $this->_primaryKeys[ $tableName ][] = $fieldName;
-				}
+			$stmtSchema = $this->execute( "describe " . $tableName );
+			while( $schemaRecord = $stmtSchema->fetch( PDO::FETCH_ASSOC ) ) {
+				$fieldName = $schemaRecord[ 'Field' ];
+				$this->_schemata[ $tableName ][ $fieldName ] = $schemaRecord;
+				if( $schemaRecord[ 'Key' ] == "PRI" ) $this->_primaryKeys[ $tableName ][] = $fieldName;
 			}
 			
 			if( $this->_cache ) {
@@ -134,8 +130,14 @@ class DatabaseHandler extends PDO
 				
 				if( ! isset( $cache ) || ! is_array( $cache ) ) $cache = [];
 				
-				$cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] = $this->_schemata;
-				$cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] = $this->_primaryKeys;
+				$partialSchemata = $cache[ "dbcache:schemata:" . $this->getConnectionSignature() ];
+				$partialPrimaryKeys = $cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ];
+				
+				$partialSchemata[ $tableName ] = $this->_schemata[ $tableName ];
+				$partialPrimaryKeys[ $tableName ] = $this->_primaryKeys[ $tableName ];
+				
+				$cache[ "dbcache:schemata:" . $this->getConnectionSignature() ] = $partialSchemata;
+				$cache[ "dbcache:primaryKeys:" . $this->getConnectionSignature() ] = $partialPrimaryKeys;
 				
 				if( $this->_cachePath != "" && ! is_dir( $this->_cachePath ) ) mkdir( $this->_cachePath, 0777, true );
 				file_put_contents( $this->_cacheFile, serialize( $cache ), LOCK_EX );
@@ -143,8 +145,24 @@ class DatabaseHandler extends PDO
 		}
 	}
 	
+	public function loadSchemata( $force = null )
+	{
+		if( $this->_database == "" ) {
+			$this->_schemata = array();
+			$this->_primaryKeys = array();
+			return;
+		}
+		
+		$stmtTables = $this->execute( "show tables" );
+		while( $tableRecord = $stmtTables->fetch( PDO::FETCH_NUM ) ) {
+			$tableName = $tableRecord[ 0 ];
+			$this->loadSchema( $tableName );
+		}
+	}
+	
 	public function fetchSchemata()
 	{
+		$this->loadSchemata();
 		return $this->_schemata;
 	}
 	
@@ -165,7 +183,7 @@ class DatabaseHandler extends PDO
 		$stmt = $this->prepare( "create database if not exists $database" );
 		$stmt->execute();
 		
-		if( $autoConnect ) $this->useDatabase( $database, false );
+		if( $autoConnect ) $this->useDatabase( $database );
 	}
 	
 	public function databaseExists( $databaseName )
@@ -173,11 +191,10 @@ class DatabaseHandler extends PDO
 		return $this->fetchValue( "SELECT IF( '" . $databaseName . "' IN( SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ), 1, 0 ) AS found" );
 	}
 	
-	public function useDatabase( $database, $loadSchemata = true )
+	public function useDatabase( $database )
 	{
 		$this->_database = $database;
 		$this->execute( "use " . $this->_database );
-		if( $loadSchemata ) $this->loadSchemata();
 	}
 	
 	public function dropDatabase( $database = null )
@@ -194,7 +211,6 @@ class DatabaseHandler extends PDO
 	public function createTable( $sql )
 	{
 		$this->execute( $sql );
-		$this->loadSchemata( "force" );
 	}
 	
 	public function createTables( $script )
@@ -222,13 +238,11 @@ class DatabaseHandler extends PDO
 		foreach( $createTables as $createTable ) {
 			$this->execute( $createTable );
 		}
-		
-		$this->loadSchemata( "force" );
 	}
 	
-	public function fetchCreateTable( $table )
+	public function fetchCreateTable( $tableName )
 	{
-		$stmt = $this->prepare( "SHOW CREATE TABLE $table" );
+		$stmt = $this->prepare( "SHOW CREATE TABLE $tableName" );
 		$stmt->execute();
 		
 		return $stmt->fetch( PDO::FETCH_ASSOC )[ 'Create Table' ];
@@ -236,6 +250,8 @@ class DatabaseHandler extends PDO
 	
 	public function fetchCreateSchemata()
 	{
+		$this->loadSchemata();
+		
 		$createSchemata = "";
 		
 		foreach( $this->_schemata as $tableName => $columns ) {
@@ -290,7 +306,8 @@ class DatabaseHandler extends PDO
 			self::prepareArgs( $args, $sql, $params );
 		}
 		else {
-			$table = $args[ 0 ];
+			$tableName = $args[ 0 ];
+			$this->loadSchema( $tableName );
 			
 			if( empty( $args[ 1 ] ) ) {
 				$selectFields = "*";
@@ -312,7 +329,7 @@ class DatabaseHandler extends PDO
 				for( reset( $whereValues ); is_int( key( $whereValues ) ); next( $whereValues ) );
 				if( is_null( key( $whereValues ) ) ) {
 					reset( $whereValues );
-					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+					foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 						$whereValue = current( $whereValues );
 						
 						if( $whereValue !== false ) {
@@ -333,7 +350,7 @@ class DatabaseHandler extends PDO
 					}
 				}
 				else {
-					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+					foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 						$fieldExists = ( array_key_exists( $field, $whereValues ) && $whereValues[ $field ] !== false ) ? true : false;
 						
 						if( $fieldExists ) {
@@ -355,7 +372,7 @@ class DatabaseHandler extends PDO
 				$whereSql = " where $whereSql";
 			}
 			
-			$sql = "select " . $selectFields . " from " . $table . $whereSql;
+			$sql = "select " . $selectFields . " from " . $tableName . $whereSql;
 		}
 	}
 	
@@ -497,7 +514,9 @@ class DatabaseHandler extends PDO
 	
 	public function insert()
 	{
-		self::prepareArgs( func_get_args(), $table, $records );
+		self::prepareArgs( func_get_args(), $tableName, $records );
+		
+		$this->loadSchema( $tableName );
 		
 		if( empty( $records ) ) return;
 		
@@ -513,7 +532,7 @@ class DatabaseHandler extends PDO
 		$recordsForDimensionShift = array();
 		
 		$fields = array();
-		foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+		foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 			$fields[] = $field;
 		}
 		
@@ -529,7 +548,7 @@ class DatabaseHandler extends PDO
 			if( is_null( key( $record ) ) ) {
 				reset( $record );
 				$newRecord = array();
-				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+				foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 					$newRecord[ $field ] = current( $record );
 					
 					$fieldIsNull = ( ! array_key_exists( $field, $newRecord ) || is_null( $newRecord[ $field ] ) || $newRecord[ $field ] === false ) ? true : false;
@@ -545,7 +564,7 @@ class DatabaseHandler extends PDO
 				$record = $newRecord;
 			}
 			else {
-				foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+				foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 					$fieldIsNull = ( ! array_key_exists( $field, $record ) || is_null( $record[ $field ] ) || $record[ $field ] === false ) ? true : false;
 					
 					if( $fieldSchema[ 'Default' ] != null && $fieldIsNull ) $record[ $field ] = $fieldSchema[ 'Default' ];
@@ -569,7 +588,7 @@ class DatabaseHandler extends PDO
 			$recordNum++;
 		}
 		
-		$sql = "insert into " . $table . " ( " . implode( ", ", $fields ) . " ) values " . $values;
+		$sql = "insert into " . $tableName . " ( " . implode( ", ", $fields ) . " ) values " . $values;
 		
 		$this->execute( $sql, $params );
 		
@@ -589,7 +608,9 @@ class DatabaseHandler extends PDO
 	
 	public function update()
 	{
-		self::prepareArgs( func_get_args(), $table, $records );
+		self::prepareArgs( func_get_args(), $tableName, $records );
+		
+		$this->loadSchema( $tableName );
 		
 		if( empty( $records ) ) return;
 		
@@ -600,7 +621,7 @@ class DatabaseHandler extends PDO
 			$params = array();
 			
 			$where = "";
-			foreach( $this->_primaryKeys[ $table ] as $key ) {
+			foreach( $this->_primaryKeys[ $tableName ] as $key ) {
 				if( $where != "" ) $where .= " and ";
 				
 				// Adding pk in the param name will prevent a conflict if the same param is being used as a part of the update clause
@@ -612,7 +633,7 @@ class DatabaseHandler extends PDO
 			}
 			
 			$update = "";
-			foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
+			foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
 				if( array_key_exists( $field, $record ) ) {
 					if( $update != "" ) $update .= ", ";
 					$update .= "$field = :$field";
@@ -623,7 +644,7 @@ class DatabaseHandler extends PDO
 			// If $update is an empty string, then abort the update because no changes have been made
 			if( $update == "" ) return;
 			
-			$sql = "update " . $table . " set $update where $where";
+			$sql = "update " . $tableName . " set $update where $where";
 			$this->execute( $sql, $params );
 		}
 	}
@@ -632,86 +653,78 @@ class DatabaseHandler extends PDO
 	{
 		self::prepareArgs( func_get_args(), $arg1, $arg2 );
 		
-		if( array_key_exists( $arg1, $this->_schemata ) ) {
-			$table = $arg1;
-			$data = $arg2;
+		$tableName = $arg1;
+		$this->loadSchema( $tableName );
+		
+		$data = $arg2;
+		if( empty( $data ) ) return;
+		
+		// Check if it is multidimensional array; if not, then make it multidimensional
+		if( ! self::isMultiArray( $data ) ) $data = array( $data );
+		
+		foreach( $data as $record ) {
 			
-			if( empty( $data ) ) return;
-			
-			// Check if it is multidimensional array; if not, then make it multidimensional
-			if( ! self::isMultiArray( $data ) ) $data = array( $data );
-			
-			foreach( $data as $record ) {
+			// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
+			for( reset( $record ); is_int( key( $record ) ); next( $record ) );
+			if( is_null( key( $record ) ) ) {
 				
-				// See if it is numeric-only indexed array; if so then values in the array correspond to table fields and must be in the same order
-				for( reset( $record ); is_int( key( $record ) ); next( $record ) );
-				if( is_null( key( $record ) ) ) {
+				// Method 1: Zero indexed array found; assume that the first n values match in the right order to all of the first n columns
+				//           $dbh->delete( "table", [ "valueOfField1", "valueOfField2", ... ] );
+				//           $dbh->delete( "table", [ [ "valueOfField1", "valueOfField2", ... ], [ "valueOfField1", "valueOfField2", ... ], ... ] );
+				
+				reset( $record );
+				$where = "";
+				$params = array();
+				foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
+					$value = current( $record );
+					if( $value === false ) {
+						next( $record );
+						continue;
+					}
 					
-					// Method 1: Zero indexed array found; assume that the first n values match in the right order to all of the first n columns
-					//           $dbh->delete( "table", [ "valueOfField1", "valueOfField2", ... ] );
-					//           $dbh->delete( "table", [ [ "valueOfField1", "valueOfField2", ... ], [ "valueOfField1", "valueOfField2", ... ], ... ] );
+					if( $where != "" ) $where .= " and ";
+					if( $value === null ) {
+						$where .= "$field is null";
+					}
+					elseif( $value === true ) {
+						$where .= "$field is not null";
+					}
+					else {
+						$where .= "$field = :$field";
+						$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
+					}
 					
-					reset( $record );
-					$where = "";
-					$params = array();
-					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
-						$value = current( $record );
-						if( $value === false ) {
-							next( $record );
-							continue;
-						}
-						
+					next( $record );
+				}
+			}
+			else {
+				
+				// Method 2: Field names explicitly given, not zero indexed
+				//           $dbh->delete( "table", [ "field1" => "value", "field2" => "value", ... ] );
+				//           $dbh->delete( "table", [ [ "field1" => "value", "field2" => "value", ... ], [ ... ], ... ] );
+				
+				$where = "";
+				$params = array();
+				foreach( $this->_schemata[ $tableName ] as $field => $fieldSchema ) {
+					if( array_key_exists( $field, $record ) ) {
+						if( $record[ $field ] === false ) continue;
 						if( $where != "" ) $where .= " and ";
-						if( $value === null ) {
+						if( $record[ $field ] === null ) {
 							$where .= "$field is null";
 						}
-						elseif( $value === true ) {
+						elseif( $record[ $field ] === true ) {
 							$where .= "$field is not null";
 						}
 						else {
 							$where .= "$field = :$field";
-							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $value );
-						}
-						
-						next( $record );
-					}
-				}
-				else {
-					
-					// Method 2: Field names explicitly given, not zero indexed
-					//           $dbh->delete( "table", [ "field1" => "value", "field2" => "value", ... ] );
-					//           $dbh->delete( "table", [ [ "field1" => "value", "field2" => "value", ... ], [ ... ], ... ] );
-					
-					$where = "";
-					$params = array();
-					foreach( $this->_schemata[ $table ] as $field => $fieldSchema ) {
-						if( array_key_exists( $field, $record ) ) {
-							if( $record[ $field ] === false ) continue;
-							if( $where != "" ) $where .= " and ";
-							if( $record[ $field ] === null ) {
-								$where .= "$field is null";
-							}
-							elseif( $record[ $field ] === true ) {
-								$where .= "$field is not null";
-							}
-							else {
-								$where .= "$field = :$field";
-								$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
-							}
+							$params[ ":$field" ] = self::formatValueForDatabase( $fieldSchema, $record[ $field ] );
 						}
 					}
 				}
-				
-				$sql = "delete from " . $table . " where $where";
-				$this->execute( $sql, $params );
 			}
-		}
-		else {
 			
-			// Method 3: Table not found as first parameter passed to this delete function; apply sql explicitly
-			//           $dbh->delete( "delete from table where ...", ?, ... );
-			
-			$this->execute( $arg1, $arg2 );
+			$sql = "delete from " . $tableName . " where $where";
+			$this->execute( $sql, $params );
 		}
 	}
 	
@@ -809,12 +822,14 @@ class DatabaseHandler extends PDO
 	*/
 	public function safeFetchForUpdate()
 	{
-		self::prepareArgs( func_get_args(), $table, $args );
+		self::prepareArgs( func_get_args(), $tableName, $args );
+		
+		$this->loadSchema( $tableName );
 		
 		$where = "";
 		$params = array();
 		
-		foreach( $this->_primaryKeys[ $table ] as $key ) {
+		foreach( $this->_primaryKeys[ $tableName ] as $key ) {
 			if( ! isset( $args[ $key ] ) ) {
 				throw new Exception( "safeFetchForUpdate requires an array of key => value pairs for its primary key values" );
 			}
@@ -824,13 +839,13 @@ class DatabaseHandler extends PDO
 			$params[ ":$key" ] = $args[ $key ];
 		}
 		
-		$record = $this->fetchOne( "select * from $table where $where limit 1 for update", $params );
+		$record = $this->fetchOne( "select * from $tableName where $where limit 1 for update", $params );
 		
 		if( $record == null ) {
 			$data = [];
 			
-			foreach( $this->_schemata[ $table ] as $field => $schema ) {
-				if( array_search( $field, $this->_primaryKeys[ $table ] ) !== false ) {
+			foreach( $this->_schemata[ $tableName ] as $field => $schema ) {
+				if( array_search( $field, $this->_primaryKeys[ $tableName ] ) !== false ) {
 					$data[ $field ] = $args[ $field ];
 					continue;
 				}
@@ -900,10 +915,10 @@ class DatabaseHandler extends PDO
 			}
 			
 			try {
-				$this->insert( $table, $data ); // If a race condition causes this record to already exist, we want it to fail silently here
+				$this->insert( $tableName, $data ); // If a race condition causes this record to already exist, we want it to fail silently here
 			} catch( Exception $ex ) {}
 			
-			$record = $this->fetchOne( "select * from $table where $where limit 1 for update", $params );
+			$record = $this->fetchOne( "select * from $tableName where $where limit 1 for update", $params );
 		}
 		
 		return $record;

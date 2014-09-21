@@ -82,7 +82,7 @@ echo "</table>";
 <br>
 <b>Here are the delete queries that are run to produce the resulting table below:</b><br>
 <br>
-$dbh->delete( "delete from soldiers where soldierId in ( ?, ?, ? )", 1, 3, 5 );<br>
+$dbh->execute( "delete from soldiers where soldierId in ( ?, ?, ? )", 1, 3, 5 );<br>
 <br>
 $dbh->delete( "soldiers", array( "soldierId" => 10 ) );<br>
 <br>
@@ -119,7 +119,7 @@ $dbh->delete( "soldiers", [ "rank" => null ] );<br>
 
 <?php
 
-$dbh->delete( "delete from soldiers where soldierId in ( ?, ?, ? )", 1, 3, 5 );
+$dbh->execute( "delete from soldiers where soldierId in ( ?, ?, ? )", 1, 3, 5 );
 
 $dbh->delete( "soldiers", array( "soldierId" => 10 ) );
 
