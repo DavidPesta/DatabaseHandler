@@ -156,13 +156,13 @@ class DatabaseHandler extends PDO
 		$stmtTables = $this->execute( "show tables" );
 		while( $tableRecord = $stmtTables->fetch( PDO::FETCH_NUM ) ) {
 			$tableName = $tableRecord[ 0 ];
-			$this->loadSchema( $tableName );
+			$this->loadSchema( $tableName, $force );
 		}
 	}
 	
 	public function fetchSchemata()
 	{
-		$this->loadSchemata();
+		$this->loadSchemata( "force" );
 		return $this->_schemata;
 	}
 	
@@ -250,7 +250,7 @@ class DatabaseHandler extends PDO
 	
 	public function fetchCreateSchemata()
 	{
-		$this->loadSchemata();
+		$this->loadSchemata( "force" );
 		
 		$createSchemata = "";
 		
