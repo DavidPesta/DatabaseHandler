@@ -4,7 +4,7 @@ DatabaseHandler
 A powerful library class that makes it easy to handle MySQL data.
 
 <b>Initial Release:</b> February 8, 2012<br>
-<b>Last Updated:</b> September 24, 2014
+<b>Last Updated:</b> October 6, 2014
 
 
 ## Documentation

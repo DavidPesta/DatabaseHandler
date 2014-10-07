@@ -798,7 +798,7 @@ class DatabaseHandler extends PDO
 					if( ! $this->inTransaction() ) return $ex->getMessage();
 				}
 				
-				if( $ex->getCode() == 40001 ) { // Deadlock found, retry; can also throw an exception with error code 40001 to trigger this retry
+				if( $ex->getCode() == 40001 || $ex->getCode() == "HY000" ) { // Deadlock or timeout, retry; can also throw exception with code 40001 to trigger this retry
 					if( $this->inTransaction() ) throw $ex;
 					$retry = true;
 					usleep( mt_rand( 5000, 100000 ) );
