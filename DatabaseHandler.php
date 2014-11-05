@@ -280,6 +280,20 @@ class DatabaseHandler extends PDO
 		if( count( $remainingArgs ) == 1 && array_key_exists( 0, $remainingArgs ) && $remainingArgs[ 0 ] == null ) $remainingArgs = array();
 	}
 	
+	// Given a list of values in an array, return a string of question marks appropriate for use in an 'in' clause. The same array passed to this function shall be what
+	// also gets passed into the execute params. The string that returns from this function should be spliced into the SQL inside of the 'in' parenthesis. It is safest
+	// when the array is zero-indexed, so if you have an associative array, run it through array_values() first and use THAT array both here and in the parameters.
+	public function createParamStringForList( $array )
+	{
+		$paramString = "";
+		$length = count( $array );
+		for( $i = 0; $i < $length; $i++ ) {
+			if( $paramString != "" ) $paramString .= ", ";
+			$paramString .= "?";
+		}
+		return $paramString;
+	}
+	
 	public function execute()
 	{
 		self::prepareArgs( func_get_args(), $sql, $params );
